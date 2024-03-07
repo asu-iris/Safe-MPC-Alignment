@@ -4,7 +4,7 @@ from casadi import *
 sys.path.append(os.path.abspath(os.path.dirname(os.getcwd())))
 sys.path.append(os.path.abspath(os.getcwd()))
 from Envs.pendulum import Pendulum_Env,Pendulum_Model
-from OCsolver.OCsolver import ocsolver
+from OCsolver.OCsolver import ocsolver,ocsolver_fast
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -35,16 +35,17 @@ p_env=Pendulum_Env(10,1,1,0.4,0.05)
 p_env.set_init_state(np.array([0,0]))
 #p_env.set_noise(False)
 #construct controller
-controller=ocsolver('pendulum control')
+controller=ocsolver_fast('pendulum control')
 controller.set_state_param(2,[-2*np.pi,-100],[2*np.pi,100])
 controller.set_ctrl_param(1,[-10],[10])
 controller.set_dyn(dyn_func)
 controller.set_step_cost(step_func)
 controller.set_term_cost(terminal_func)
 controller.set_g(phi_func,weights=weights,gamma=0.01)
+controller.construct_graph(horizon=Horizon)
 for i in range(80):
     x=p_env.get_curr_state()
-    u=controller.control(x,Horizon)
+    u=controller.control(x)
     #print(u)
     #print(type(u))
     p_env.step(u)
