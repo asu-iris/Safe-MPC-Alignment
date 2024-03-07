@@ -17,7 +17,7 @@ class Pendulum_Env(object):
         self.acc_traj=[]
         
         self.noise_flag=True
-        self.noise_cov=np.array([[0.0004,0],
+        self.noise_cov=np.array([[0.0001,0],
                                  [0,0.0001]])
 
     def set_init_state(self,x:np.ndarray):
@@ -82,6 +82,7 @@ class Pendulum_Env(object):
     def show_motion_scatter(self):
         plt.figure()
         plt.scatter(np.array(self.x_traj)[:,0],np.array(self.x_traj)[:,1])
+        plt.show()
 
 class Pendulum_Model(object):
     def __init__(self,g,l,m,d,dt) -> None:

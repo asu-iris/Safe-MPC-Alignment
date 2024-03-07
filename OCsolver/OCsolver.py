@@ -31,6 +31,12 @@ class ocsolver(object):
     def set_term_cost(self,term_cost:Function):
         self.terminal_cost=term_cost
 
+    def set_g(self,Features:Function,weights,gamma=0.001):
+        self.features = Features
+        self.weights=MX(weights)
+        self.gamma=gamma
+        self.g_flag=True
+
     def solve(self,init_state,horizon):
         assert hasattr(self,'x_dim'), "missing x_dim"
         assert hasattr(self,'u_dim'), "missing u_dim"
@@ -40,12 +46,13 @@ class ocsolver(object):
         assert hasattr(self,'step_cost'), "missing step_cost"
         assert hasattr(self,'terminal_cost'), "terminal_cost"
         
-        if type(init_state) == numpy.ndarray:
-            init_state = init_state.flatten().tolist()
+        #if type(init_state) == numpy.ndarray:
+            #init_state = init_state.flatten().tolist()
         
         #pre-define lists for casadi solver, joint optimization of x,u
-        u_mx_list=[]
-        x_mx_list=[]
+        self.u_mx_list=[]
+        self.x_mx_list=[]
+        traj_xu=[]
 
         opt_mx_list=[]
         opt_mid_list=[]
@@ -58,54 +65,71 @@ class ocsolver(object):
 
         J=0
 
-        Xk = MX.sym('X_0', self.x_dim) #Xk stands for the state in kth time step
-        x_mx_list.append(Xk)
+        #Xk = MX.sym('X_0', self.x_dim) #Xk stands for the state in kth time step
+        Xk = MX(init_state)
+        self.x_mx_list.append(Xk)
+        traj_xu.append(Xk)
 
-        opt_mx_list.append(Xk)
-        opt_lb_list += init_state
-        opt_ub_list += init_state
-        opt_mid_list += init_state
+        #opt_mx_list.append(Xk)
+        #opt_lb_list += init_state
+        #opt_ub_list += init_state
+        #opt_mid_list += init_state
 
         for k in range(horizon): #at step k, construct u_k and x_{k+1}
             Uk=MX.sym('U_' + str(k), self.u_dim)
             #add u to var list
             opt_mx_list.append(Uk)
-            u_mx_list.append(Uk)
+            self.u_mx_list.append(Uk)
+            traj_xu.append(Uk)
             opt_lb_list+=self.u_lb
             opt_ub_list+=self.u_ub
-            opt_mid_list+= [0.5 * (x + y) for x, y in zip(self.u_lb, self.u_ub)]
+            opt_mid_list+= [0.5 * (x + y) - 2 for x, y in zip(self.u_lb, self.u_ub)]
             #add x to var list
-            Xk_1=MX.sym('X_' + str(k+1), self.x_dim)
-            x_mx_list.append(Xk_1)
-            opt_mx_list.append(Xk_1)
-            opt_lb_list += self.x_lb
-            opt_ub_list += self.x_ub
-            opt_mid_list+= [0.5 * (x + y) for x, y in zip(self.x_lb, self.x_ub)]
+            #Xk_1=MX.sym('X_' + str(k+1), self.x_dim)
             #dynamics
-            X_ref=self.dyn_f(Xk,Uk)
-            dyn_rel_list.append(X_ref - Xk_1)
-            dyn_lb_list += self.x_dim * [0]
-            dyn_ub_list += self.x_dim * [0]
+            Xk_1=self.dyn_f(Xk,Uk)
+            self.x_mx_list.append(Xk_1)
+            traj_xu.append(Xk_1)
+            #opt_mx_list.append(Xk_1)
+            #opt_lb_list += self.x_lb
+            #opt_ub_list += self.x_ub
+            #opt_mid_list+= [0.5 * (x + y) for x, y in zip(self.x_lb, self.x_ub)]
+            #dynamics
+            #X_ref=self.dyn_f(Xk,Uk)
+            #dyn_rel_list.append(X_ref - Xk_1)
+            #dyn_lb_list += self.x_dim * [0]
+            #dyn_ub_list += self.x_dim * [0]
             #J
             Ck=self.step_cost(Xk,Uk)
             J=J+Ck
             #update xk
             Xk=Xk_1
-
+        #define trajectory
+        traj_xu_flat=vertcat(*traj_xu)
+        traj_u_flat=vertcat(*self.u_mx_list)
         #finish J
         J=J+self.terminal_cost(Xk_1)
+        #Barrier
+        B=J
+        if hasattr(self,'g_flag'):
+            expand_w=vertcat(MX([1]),self.weights)
+            phi=self.features(traj_xu_flat)
+            g_theta=dot(expand_w,phi)
+            B=B-self.gamma*log(-g_theta)
 
         opts = {'ipopt.print_level': self.print_level, 'ipopt.sb': 'yes', 'print_time': self.print_level}
-        prob = {'f': J, 'x': vertcat(*opt_mx_list), 'g': vertcat(*dyn_rel_list)}
+        prob = {'f': B, 'x': vertcat(*opt_mx_list), 'g': vertcat(*dyn_rel_list)}
         solver = nlpsol('solver', 'ipopt', prob, opts)
         sol = solver(x0=opt_mid_list, lbx=opt_lb_list, ubx=opt_ub_list, lbg=dyn_lb_list, ubg=dyn_ub_list)
-        w_opt = sol['x'].full().flatten() #w_opt:[x_0,u_0,x_1,..u_{k-1},x_k]
-
+        w_opt = sol['x'].full().flatten() #w_opt:[u_0,u_1,...,u_k-1]
+        x=self.dyn_f(init_state,w_opt[0])
+        print(x)
+        print('g', Function('g_theta',[traj_u_flat],[g_theta])(w_opt))
         return w_opt
     
     def control(self,init_state,horizon):
-        opt_traj=self.solve(init_state,horizon)
-        return opt_traj[self.x_dim:self.x_dim+self.u_dim]
+        self.opt_traj=self.solve(init_state,horizon)
+        return self.opt_traj[0:self.u_dim]
 
 
 
