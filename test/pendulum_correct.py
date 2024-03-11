@@ -130,7 +130,7 @@ while not termination_flag:
             print('volume', vol)
             volume_log.append(vol)
             #mve_calc.draw(C,learned_theta,weights_H)
-            if difference<0.04:
+            if difference<0.1:
                 print("converged! Final Result: ",learned_theta)
                 termination_flag=True
                 break
@@ -156,6 +156,7 @@ plt.show()
 p_env.set_init_state(np.array([0,0]))
 controller.set_g(phi_func,weights=learned_theta,gamma=Gamma)
 controller.construct_prob_t(horizon=Horizon)
+controller.reset_warmstart()
 print('demo with learned params')
 for i in range(300):
     x=p_env.get_curr_state()

@@ -333,7 +333,7 @@ class ocsolver_fast(object):
         opts = {'ipopt.print_level': self.print_level, 'ipopt.sb': 'yes', 'print_time': self.print_level}
         prob = {'f': obj_B, 'x': self.traj_xu_flat_t, 'g': cd.vertcat(*self.dyn_list_t)}
         solver = cd.nlpsol('solver', 'ipopt', prob, opts)
-        if hasattr(self, "warm_start_sol"):
+        if hasattr(self, "warm_start_sol") and self.warm_start_sol is not None:
             self.initial_guess=self.warm_start_sol
         else:
             self.initial_guess=self.opt_mid_list_t
@@ -353,6 +353,9 @@ class ocsolver_fast(object):
     def control_t(self,init_state):
         self.opt_traj_t=self.solve_t(init_state)
         return self.opt_traj_t[self.x_dim:self.x_dim+self.u_dim]
+    
+    def reset_warmstart(self):
+        self.warm_start_sol=None
 
 
 
