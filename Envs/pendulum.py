@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from casadi import *
+import casadi as cd
 
 class Pendulum_Env(object):
     def __init__(self,g,l,m,d,dt) -> None:
@@ -17,8 +17,8 @@ class Pendulum_Env(object):
         self.acc_traj=[]
         
         self.noise_flag=True
-        self.noise_cov=np.array([[0.0001,0],
-                                 [0,0.0001]])
+        self.noise_cov=np.array([[0.00001,0],
+                                 [0,0.00004]])
 
     def set_init_state(self,x:np.ndarray):
         self.x_0=np.array(x)
@@ -56,8 +56,12 @@ class Pendulum_Env(object):
         self.x_traj=[]
         self.u_traj=[]
 
+    def reset_env(self,x:np.ndarray):
+        self.set_init_state(x)
+        self.clear_traj()
+
     def show_animation(self):
-        # Function to update the position of the pendulum
+        # cd.Function to update the position of the pendulum
         def update(x):
             # Update the position of the pendulum
             line.set_data([0, self.l*np.cos(x[0]-np.pi/2)], [0, self.l*np.sin(x[0]-np.pi/2)])
@@ -74,14 +78,16 @@ class Pendulum_Env(object):
         line, = ax.plot([], [], 'o-', lw=2)
 
         # Set up the animation
-        ani = FuncAnimation(fig, update, frames=self.x_traj, interval=50, blit=True)
+        ani = FuncAnimation(fig, update, frames=self.x_traj, interval=int(1000*self.dt), blit=True)
 
         # Display the animation
         plt.show()
 
     def show_motion_scatter(self):
         plt.figure()
-        plt.scatter(np.array(self.x_traj)[:,0],np.array(self.x_traj)[:,1])
+        plt.xlabel('alpha')
+        plt.ylabel('dalpha')
+        plt.scatter(np.array(self.x_traj)[:,0],np.array(self.x_traj)[:,1],s=10)
         plt.show()
 
 class Pendulum_Model(object):
@@ -100,24 +106,24 @@ class Pendulum_Model(object):
         assert self.d, 'missing d'
         assert self.dt, 'missing dt'
 
-        self.alpha,self.dalpha=SX.sym('alpha'),SX.sym('dalpha')
-        self.U=SX.sym('u')
-        self.X=vertcat(self.alpha,self.dalpha)
-        self.dX=vertcat(self.dalpha,(-0.5*self.l * self.m * self.g * np.sin(self.alpha) + self.U - self.d * self.dalpha) /self.I)
+        self.alpha,self.dalpha=cd.SX.sym('alpha'),cd.SX.sym('dalpha')
+        self.U=cd.SX.sym('u')
+        self.X=cd.vertcat(self.alpha,self.dalpha)
+        self.dX=cd.vertcat(self.dalpha,(-0.5*self.l * self.m * self.g * np.sin(self.alpha) + self.U - self.d * self.dalpha) /self.I)
 
     def get_dyn_f(self):
         self.dyn=self.X + self.dt * self.dX
-        return Function('dynamics',[self.X,self.U],[self.dyn])
+        return cd.Function('dynamics',[self.X,self.U],[self.dyn])
     
     def get_step_cost(self, P_mat:np.ndarray, Q_val:float):
         target=np.array([np.pi,0])
         self.c=(self.X-target).T @ P_mat @ (self.X-target) + self.U * Q_val * self.U
-        return Function('step_cost',[self.X,self.U],[self.c])
+        return cd.Function('step_cost',[self.X,self.U],[self.c])
     
     def get_terminal_cost(self,T_mat:np.ndarray):
         target=np.array([np.pi,0])
         self.h=(self.X-target).T @ T_mat @ (self.X-target)
-        return Function('terminal_cost',[self.X],[self.h])
+        return cd.Function('terminal_cost',[self.X],[self.h])
 """
 pdl=Pendulum_Env(10,1,1,0.4,0.05)
 pdl.set_init_state(np.array([np.pi/4,0]))
