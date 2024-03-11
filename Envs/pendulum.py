@@ -55,11 +55,7 @@ class Pendulum_Env(object):
     def clear_traj(self):
         self.x_traj=[]
         self.u_traj=[]
-
-    def reset_env(self,x:np.ndarray):
-        self.set_init_state(x)
-        self.clear_traj()
-
+        
     def show_animation(self):
         # cd.Function to update the position of the pendulum
         def update(x):

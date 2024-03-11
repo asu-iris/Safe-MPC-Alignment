@@ -22,8 +22,8 @@ class mvesolver(object):
             self.constraint_b.append(-self.lb[i])
 
     def add_constraint(self,a,b):#ax <= b
-        self.constraint_a.append(np.array(a))
-        self.constraint_b.append(np.array(b))
+        self.constraint_a.append(np.reshape(np.array(a),(-1,1)))
+        self.constraint_b.append(np.reshape(np.array(b),(-1,1)))
 
     def solve(self,tolerance=0.001):
         C = cp.Variable((self.dim, self.dim), symmetric=True)

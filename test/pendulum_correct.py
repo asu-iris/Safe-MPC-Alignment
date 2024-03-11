@@ -95,7 +95,7 @@ corr_num=0
 termination_flag=False
 while not termination_flag:
     print('episode',EPISODE)
-    p_env.reset_env(np.array([0,0]))
+    p_env.set_init_state(np.array([0,0]))
     for i in range(300):
         x=p_env.get_curr_state()
         if np.sqrt(np.sum((x-np.array([np.pi,0]))**2)) <=0.08:
@@ -153,7 +153,7 @@ plt.title("MVE volume")
 plt.plot(volume_log,label='MVE volume')
 plt.show()
 #perform one round with converged params
-p_env.reset_env(np.array([0,0]))
+p_env.set_init_state(np.array([0,0]))
 controller.set_g(phi_func,weights=learned_theta,gamma=Gamma)
 controller.construct_prob_t(horizon=Horizon)
 print('demo with learned params')
