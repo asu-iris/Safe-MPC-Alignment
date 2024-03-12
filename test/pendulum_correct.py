@@ -63,7 +63,7 @@ controller.set_step_cost(step_func)
 controller.set_term_cost(terminal_func)
 #controller.construct_graph(horizon=Horizon)
 controller.set_g(phi_func,weights=weights_init,gamma=Gamma)
-controller.construct_prob_t(horizon=Horizon)
+controller.construct_prob(horizon=Horizon)
 
 #construct cutter
 hb_calculator=cutter('pendulum cut')
@@ -77,8 +77,8 @@ hb_calculator.construct_graph(horizon=Horizon)
 
 #construct MVESolver
 mve_calc=mvesolver('pendulum_mve',2)
-lbs=np.array([-20,-20]) #-6
-ubs=np.array([20,20])
+lbs=np.array([-10,-10]) #-6
+ubs=np.array([10,10])
 mve_calc.set_init_constraint(lbs, ubs) #Theta_0
 
 learned_theta=np.array(weights_init)
@@ -98,11 +98,11 @@ while not termination_flag:
     p_env.set_init_state(np.array([0,0]))
     for i in range(300):
         x=p_env.get_curr_state()
-        if np.sqrt(np.sum((x-np.array([np.pi,0]))**2)) <=0.08:
+        if np.sqrt(np.sum((x-np.array([np.pi,0]))**2)) <=0.15:
             print('reached desired position')
             break
         #print(i)
-        u=controller.control_t(x)
+        u=controller.control(x)
         agent_output=agent.act(controller.opt_traj_t)
         if agent_output==None:
             print('emergency stop')
@@ -130,13 +130,13 @@ while not termination_flag:
             print('volume', vol)
             volume_log.append(vol)
             #mve_calc.draw(C,learned_theta,weights_H)
-            if difference<0.1:
+            if difference<0.08:
                 print("converged! Final Result: ",learned_theta)
                 termination_flag=True
                 break
             #set new constraints
             controller.set_g(phi_func,weights=learned_theta,gamma=Gamma)
-            controller.construct_prob_t(horizon=Horizon)
+            controller.construct_prob(horizon=Horizon)
 
             hb_calculator.set_g(phi_func,weights=learned_theta,gamma=Gamma)
             hb_calculator.construct_graph(horizon=Horizon)
@@ -155,7 +155,7 @@ plt.show()
 #perform one round with converged params
 p_env.set_init_state(np.array([0,0]))
 controller.set_g(phi_func,weights=learned_theta,gamma=Gamma)
-controller.construct_prob_t(horizon=Horizon)
+controller.construct_prob(horizon=Horizon)
 controller.reset_warmstart()
 print('demo with learned params')
 for i in range(300):
@@ -164,7 +164,7 @@ for i in range(300):
         print('reached desired position')
         break
     print('demo step',i)
-    u=controller.control_t(x)
+    u=controller.control(x)
     p_env.step(u)
 p_env.show_motion_scatter()
 plt.figure()

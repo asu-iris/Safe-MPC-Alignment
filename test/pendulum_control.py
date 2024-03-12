@@ -43,15 +43,15 @@ controller.set_step_cost(step_func)
 controller.set_term_cost(terminal_func)
 #controller.construct_graph(horizon=Horizon)
 controller.set_g(phi_func,weights=weights,gamma=0.05)
-controller.construct_prob_t(horizon=Horizon)
+controller.construct_prob(horizon=Horizon)
 for i in range(60):
     #print(i)
     x=p_env.get_curr_state()
     #test for parameter switching
     if i==10:
         controller.set_g(phi_func,weights=np.array([1,0.8]),gamma=0.05)
-        controller.construct_prob_t(horizon=Horizon)   
-    u=controller.control_t(x)
+        controller.construct_prob(horizon=Horizon)   
+    u=controller.control(x)
     #print(u)
     #print(type(u))
     p_env.step(u)
