@@ -11,7 +11,7 @@ class UAV_env(object):
         self.l_w=l_w
         self.dt=dt
 
-        self.K_tau = np.array([[0,-self.l_w/2,0,-self.l_w/2],
+        self.K_tau = np.array([[0,-self.l_w/2,0,self.l_w/2],
                                [-self.l_w/2,0,self.l_w/2,0],
                                [c,-c,c,-c]])
 
@@ -47,7 +47,6 @@ class UAV_env(object):
         d_q = 0.5 * self.Omega(self.w_B.flatten()) @ self.q_BI
         
         d_w_B = np.linalg.inv(self.J_B) @ (self.K_tau @ u - np.reshape(np.cross(self.w_B.flatten(), (self.J_B @ self.w_B).flatten()),(-1,1)))
-
         self.r_I += self.dt * d_r_I
         self.v_I += self.dt * d_v_I
         self.q_BI += self.dt * d_q
@@ -87,8 +86,8 @@ if __name__ == '__main__':
     #print(init_x)
     uav_env=UAV_env(10,1,np.eye(3),1,0.05,1)
     uav_env.set_init_state(init_x)
-    u=0*np.ones((4,1))
+    u=2.6*np.ones((4,1))
 
-    for i in range(10):
+    for i in range(100):
         uav_env.step(u)
-        print(uav_env.get_state())
+        print(uav_env.get_state().T)
