@@ -35,6 +35,8 @@ class UAV_env(object):
         self.u_traj=[]
 
     def step(self,u):# u: T_1, T_2, T_3, T_4
+        u=np.array(u).reshape((-1,1))
+        assert u.shape == (4,1) , "wrong control input dim"
         self.r_I=self.curr_x[0:3]
         self.v_I=self.curr_x[3:6]
         self.q_BI=self.curr_x[6:10] #from body to the world!
@@ -198,6 +200,45 @@ class UAV_model(object):
 
         self.x_t_1=cd.vertcat(self.r_I_1,self.v_I_1,self.q_BI_1,self.w_B_1)
         return cd.Function('uav_dynamics',[self.x_t,self.u],[self.x_t_1])
+    
+    def get_step_cost(self, param_vec:np.ndarray, target_pos=7*np.ones(3)):
+        target_r=cd.DM(target_pos) #target pos is [5,5,5]
+        target_v=cd.DM(np.zeros(3)) #target v is [0,0,0]
+        target_q=cd.DM(np.array([1,0,0,0])) # target q is the same as world frame
+        target_w=cd.DM(np.zeros(3)) #target w is [0,0,0]
+
+        self.x_t=cd.SX.sym('x_t',13)
+        self.r_I=self.x_t[0:3]
+        self.v_I=self.x_t[3:6]
+        self.q_BI=self.x_t[6:10] #from body to the world!
+        self.w_B=self.x_t[10:]
+
+        self.u=cd.SX.sym('u_t',4)
+
+        p_vec = cd.DM(param_vec)
+        l_vec = cd.vertcat(cd.sumsqr(self.r_I-target_r), cd.sumsqr(self.v_I-target_v),q_dist(self.q_BI,target_q),\
+                           cd.sumsqr(self.w_B-target_w), cd.sumsqr(self.u)) 
+        self.c= p_vec.T @ l_vec
+        return cd.Function('step_cost',[self.x_t,self.u],[self.c])
+    
+    def get_terminal_cost(self,param_vec:np.ndarray, target_pos=7*np.ones(3)):
+        target_r=cd.DM(target_pos) #target pos is [5,5,5]
+        target_v=cd.DM(np.zeros(3)) #target v is [0,0,0]
+        target_q=cd.DM(np.array([1,0,0,0])) # target q is the same as world frame
+        target_w=cd.DM(np.zeros(3)) #target w is [0,0,0]
+
+        self.x_t=cd.SX.sym('x_t',13)
+        self.r_I=self.x_t[0:3]
+        self.v_I=self.x_t[3:6]
+        self.q_BI=self.x_t[6:10] #from body to the world!
+        self.w_B=self.x_t[10:]
+
+        p_vec = cd.DM(param_vec)
+        l_vec = cd.vertcat(cd.sumsqr(self.r_I-target_r), cd.sumsqr(self.v_I-target_v),q_dist(self.q_BI,target_q),\
+                           cd.sumsqr(self.w_B-target_w)) 
+        self.c_T= p_vec.T @ l_vec
+        return cd.Function('terminal_cost',[self.x_t],[self.c_T])
+        
 
 
 def Quat_Rot(q):
@@ -222,6 +263,10 @@ def Omega(w):
     )
     return Omeg
 
+def q_dist(q_1,q_2):
+    I=cd.DM(np.eye(3))
+    return 0.5*cd.trace(I-Quat_Rot(q_2).T @ Quat_Rot(q_1))
+
 if __name__ == '__main__':
     init_r = np.zeros((3,1))
     init_v = np.zeros((3,1))
@@ -237,18 +282,35 @@ if __name__ == '__main__':
     uav_model=UAV_model(**uav_params)
     dyn_f=uav_model.get_dyn_f()
 
+    step_cost_vec=np.array([0.05,0.1,1,0.1,0.05])
+    step_cost_f=uav_model.get_step_cost(step_cost_vec)
+    term_cost_vec=np.array([0.1,0.2,2,0.1])
+    term_cost_f=uav_model.get_terminal_cost(term_cost_vec)
+
     u=2.6*np.ones((4,1))
     u[2]+=0.1
     u[0]-=0.1
 
     for i in range(100):
         x=uav_env.get_curr_state()
-        #print('1',x)
+        #r=x[0:3]
+        #v=x[3:6]
+        #q=x[6:10]
+        #w=x[10:]
+        #print('l1',cd.sumsqr(r.flatten()-5*np.ones(3)))
+        #print('l2',cd.sumsqr(v.flatten()-np.zeros(3)))
+        #print('l3',q_dist(q.flatten(),np.array([1,0,0,0])))
+        #print('l4',cd.sumsqr(w.flatten()-np.zeros(3)))
+        #print('l5',cd.sumsqr(u.flatten()))
+        #print('1',x.T)
         uav_env.step(u)
         #print('2',x)
         x_1=dyn_f(x,u)
-        print(uav_env.get_curr_state()-x_1)
+        #print(uav_env.get_curr_state()-x_1)
+        print('step cost',step_cost_f(x,u))
+    
+    print('term_cost',term_cost_f(uav_env.get_curr_state()))
 
-    #uav_env.show_animation(flag_2d=False)
+    uav_env.show_animation(flag_2d=False)
     
 

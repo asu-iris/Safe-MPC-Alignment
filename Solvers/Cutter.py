@@ -112,5 +112,14 @@ class cutter(object):
         b_phi=-phi[0]
 
         return h,b,h_phi,b_phi
+    
+    def calc_m_grad(self,init_state,traj_xu):
+        self.traj_u=[]
+        for i in range(self.horizon):
+            start_idx=i*(self.x_dim+self.u_dim)+self.x_dim
+            end_idx=start_idx+self.u_dim
+            self.traj_u+=list(traj_xu[start_idx:end_idx])
+        self.traj_u=np.array(self.traj_u)
+        return self.m_grad_func(init_state,self.traj_u)
 
 

@@ -163,7 +163,7 @@ class ocsolver_fast(object):
 
     def set_g(self,Features:cd.Function,weights,gamma=0.001):
         self.features = Features
-        self.weights=cd.SX(weights)
+        self.weights=cd.DM(weights)
         self.gamma=gamma
         self.g_flag=True
     
@@ -179,8 +179,8 @@ class ocsolver_fast(object):
         #self.init_state_t=SX.sym('init_x_t',self.x_dim)
 
         #pre-define lists for casadi solver, joint optimization of x,u
-        self.u_mx_list_t=[]
-        self.x_mx_list_t=[]
+        self.u_sx_list_t=[]
+        self.x_sx_list_t=[]
         self.traj_xu_t=[]
 
         #self.opt_mx_list_t=[]
@@ -196,7 +196,7 @@ class ocsolver_fast(object):
         Xk = cd.SX.sym('X_t_0', self.x_dim) #Xk stands for the state in kth time step
         #Xk = self.init_state_t
         #self.opt_mx_list_t.append(Xk)
-        self.x_mx_list_t.append(Xk)
+        self.x_sx_list_t.append(Xk)
         self.traj_xu_t.append(Xk)
         #will modify the range of x0 when there is actual init state
         self.opt_lb_list_t+=self.x_lb
@@ -206,7 +206,7 @@ class ocsolver_fast(object):
         for k in range(horizon): #at step k, construct u_k and x_{k+1}
             Uk=cd.SX.sym('U_t_' + str(k), self.u_dim)
             #add u to var list
-            self.u_mx_list_t.append(Uk)
+            self.u_sx_list_t.append(Uk)
             self.traj_xu_t.append(Uk)
             self.opt_lb_list_t+=self.u_lb
             self.opt_ub_list_t+=self.u_ub
@@ -214,7 +214,7 @@ class ocsolver_fast(object):
             
             #X
             Xk_1=cd.SX.sym('X_t_' + str(k+1), self.x_dim)
-            self.x_mx_list_t.append(Xk_1)
+            self.x_sx_list_t.append(Xk_1)
             self.traj_xu_t.append(Xk_1)
 
             self.opt_lb_list_t+=self.x_lb
@@ -232,7 +232,7 @@ class ocsolver_fast(object):
             Xk=Xk_1
         #define trajectory
         self.traj_xu_flat_t=cd.vertcat(*self.traj_xu_t)
-        self.traj_u_flat_t=cd.vertcat(*self.u_mx_list_t)
+        self.traj_u_flat_t=cd.vertcat(*self.u_sx_list_t)
         #finish J
         self.J_t=self.J_t+self.terminal_cost(Xk_1)
         #Barrier
@@ -258,7 +258,9 @@ class ocsolver_fast(object):
         prob = {'f': obj_B, 'x': self.traj_xu_flat_t, 'g': cd.vertcat(*self.dyn_list_t)}
         solver = cd.nlpsol('solver', 'ipopt', prob, opts)
         if hasattr(self, "warm_start_sol") and self.warm_start_sol is not None:
-            self.initial_guess=self.warm_start_sol
+            self.initial_guess=self.opt_mid_list_t.copy()
+            self.initial_guess[self.x_dim:]=list(self.warm_start_sol)[self.x_dim:]
+            #self.initial_guess=list(self.warm_start_sol)
         else:
             self.initial_guess=self.opt_mid_list_t
         sol = solver(x0=self.initial_guess, lbx=self.opt_lb_list_t, ubx=self.opt_ub_list_t, lbg=self.dyn_lb_list_t, ubg=self.dyn_ub_list_t)
@@ -406,8 +408,10 @@ class ocsolver_inner_Barrier(object):
         self.opt_mid_list_t[0:self.x_dim]=list(init_state.flatten())
 
         obj_B=self.J_func_t(self.traj_xu_flat_t)
-
-        opts = {'ipopt.print_level': self.print_level, 'ipopt.sb': 'yes', 'ipopt.mu_target': self.gamma, 'print_time': self.print_level}
+        if hasattr(self,'g_flag'):
+            opts = {'ipopt.print_level': self.print_level, 'ipopt.sb': 'yes', 'ipopt.mu_target': self.gamma, 'print_time': self.print_level}
+        else:
+            opts = {'ipopt.print_level': self.print_level, 'ipopt.sb': 'yes', 'print_time': self.print_level}
         prob = {'f': obj_B, 'x': self.traj_xu_flat_t, 'g': cd.vertcat(*self.constraints_t)}
         solver = cd.nlpsol('solver', 'ipopt', prob, opts)
         if hasattr(self, "warm_start_sol") and self.warm_start_sol is not None:
@@ -417,11 +421,11 @@ class ocsolver_inner_Barrier(object):
         sol = solver(x0=self.initial_guess, lbx=self.opt_lb_list_t, ubx=self.opt_ub_list_t, lbg=self.constraints_lb_t, ubg=self.constraints_ub_t)
         w_opt = sol['x'].full().flatten() #w_opt:[u_0,x_1,...,x_k-1]
         x=self.dyn_f(init_state,w_opt[0])
-        #print(x)
-        #g_val= cd.Function('g_theta',[self.traj_xu_flat_t],[self.g_theta_t])(w_opt)
-        #print('g', g_val)
-        #print('gamma*ln(-g)', self.gamma*np.log(-g_val))
-        #print('B',sol['f'])
+        print(x)
+        g_val= cd.Function('g_theta',[self.traj_xu_flat_t],[self.g_theta_t])(w_opt)
+        print('g', g_val)
+        print('gamma*ln(-g)', self.gamma*np.log(-g_val))
+        print('B',sol['f'])
         if hasattr(self,'g_flag') and cd.Function('g_theta',[self.traj_xu_flat_t],[self.g_theta_t])(w_opt)>0:
             raise Exception("violation appears in trajectory solved")
         self.warm_start_sol=w_opt
