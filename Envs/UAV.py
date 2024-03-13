@@ -28,7 +28,7 @@ class UAV_env(object):
         self.curr_x=self.x_0
 
     def get_curr_state(self):
-        return self.curr_x
+        return np.copy(self.curr_x[:])
     
     def clear_traj(self):
         self.x_traj=[]
@@ -37,19 +37,20 @@ class UAV_env(object):
     def step(self,u):# u: T_1, T_2, T_3, T_4
         self.r_I=self.curr_x[0:3]
         self.v_I=self.curr_x[3:6]
-        self.q_BI=self.curr_x[6:10]
+        self.q_BI=self.curr_x[6:10] #from body to the world!
         self.w_B=self.curr_x[10:]
 
-        self.R_B_I = Quat_Rot(self.q_BI.flatten())#rotation matrix: inertial to body
-        self.R_I_B = self.R_B_I.T #rotation matrix: body to inertial
+        self.R_I_B = np.array(Quat_Rot(self.q_BI.flatten()))#rotation matrix: body to the world
+        self.R_B_I = self.R_I_B.T #rotation matrix: world to body
+        #print('R_B_I',self.R_B_I)
 
         thrust= u.T @ np.ones((4,1))
-        print(thrust)
+        #print(thrust)
         f_I = self.R_I_B @ np.reshape(np.concatenate([np.zeros((2,1)),thrust]),(-1,1))
-        print(f_I)
+        #print(f_I)
         d_r_I = self.v_I
         d_v_I = self.g_I + f_I/self.m
-        d_q = 0.5 * Omega(self.w_B.flatten()) @ self.q_BI
+        d_q = 0.5 * np.array(Omega(self.w_B.flatten())) @ self.q_BI
         
         d_w_B = np.linalg.inv(self.J_B) @ (self.K_tau @ u - np.reshape(np.cross(self.w_B.flatten(), (self.J_B @ self.w_B).flatten()),(-1,1)))
         self.r_I += self.dt * d_r_I
@@ -60,9 +61,6 @@ class UAV_env(object):
         self.curr_x=np.concatenate([self.r_I,self.v_I,self.q_BI,self.w_B],axis=0)
         self.x_traj.append(self.curr_x.flatten())
 
-    def get_state(self):
-        return self.curr_x
-    
     def get_pos(self):
         return self.curr_x[0:3]
     
@@ -78,13 +76,16 @@ class UAV_env(object):
             #wing3_tip = np.array([x, y-wing_length, z])
             #wing4_tip = np.array([x, y+wing_length, z])
 
-            wing1_tip = np.array([+wing_length, 0, 0])
-            wing2_tip = np.array([0, +wing_length, 0])
-            wing3_tip = np.array([-wing_length, 0, 0])
-            wing4_tip = np.array([0, -wing_length, 0])
+            wing1_tip = np.array([+wing_length/2, 0, 0])
+            wing2_tip = np.array([0, +wing_length/2, 0])
+            wing3_tip = np.array([-wing_length/2, 0, 0])
+            wing4_tip = np.array([0, -wing_length/2, 0])
             
             # Rotate wing tips based on quaternion
-            rot_I_B = R.from_quat([q1, q2, q3, q0]).as_matrix().T
+            #rot_I_B_1 = R.from_quat([q1, q2, q3, q0]).as_matrix().T
+            #print('1',rot_I_B_1)
+            rot_I_B = np.array(Quat_Rot(quat.flatten())) #body to the world
+            #print('2',rot_I_B)
             wing1_tip = rot_I_B @ wing1_tip +pos
             wing2_tip = rot_I_B @ wing2_tip +pos
             wing3_tip = rot_I_B @ wing3_tip +pos
@@ -155,11 +156,60 @@ class UAV_env(object):
         ani = FuncAnimation(fig, update, frames=len(positions), interval=1000*self.dt)
         plt.show()
 
+class UAV_model(object):
+    def __init__(self,gravity,m,J_B,l_w,dt,c) -> None:
+        self.g=gravity
+        self.g_I=cd.DM(np.array([0,0,-self.g]))
+        self.m=m
+        self.J_B=J_B
+        self.l_w=l_w
+        self.dt=dt
+
+        self.K_tau = cd.DM(np.array([[0,-self.l_w/2,0,self.l_w/2],
+                               [-self.l_w/2,0,self.l_w/2,0],
+                               [c,-c,c,-c]]))
+        
+    def get_dyn_f(self):
+        self.x_t=cd.SX.sym('x_t',13)
+        self.r_I=self.x_t[0:3]
+        self.v_I=self.x_t[3:6]
+        self.q_BI=self.x_t[6:10] #from body to the world!
+        self.w_B=self.x_t[10:]
+
+        self.u=cd.SX.sym('u_t',4)
+
+        self.R_I_B = Quat_Rot(self.q_BI) #rotation matrix: body to the world
+        thrust= self.u.T @ cd.DM(np.ones((4,1)))
+        f_I = self.R_I_B @ cd.vertcat(0,0,thrust)
+        #print(f_I)
+        d_r_I = self.v_I
+        #print('d_r shape',d_r_I.shape)
+        d_v_I = self.g_I + f_I/self.m
+        #print('d_v shape',d_v_I.shape)
+        d_q = 0.5 * Omega(self.w_B) @ self.q_BI
+        #print('d_q shape',d_q.shape)
+        d_w_B = cd.inv(self.J_B) @ (self.K_tau @ self.u - cd.cross(self.w_B, (self.J_B @ self.w_B)))
+        #print('d_w shape',d_w_B.shape)
+
+        self.r_I_1 = self.r_I + self.dt * d_r_I
+        self.v_I_1 = self.v_I + self.dt * d_v_I
+        self.q_BI_1 = self.q_BI + self.dt * d_q
+        self.w_B_1 = self.w_B + self.dt * d_w_B
+
+        self.x_t_1=cd.vertcat(self.r_I_1,self.v_I_1,self.q_BI_1,self.w_B_1)
+        return cd.Function('uav_dynamics',[self.x_t,self.u],[self.x_t_1])
+
+
 def Quat_Rot(q):
+    #Rot = cd.vertcat(
+    #        cd.horzcat(1 - 2 * (q[2] ** 2 + q[3] ** 2), 2 * (q[1] * q[2] + q[0] * q[3]), 2 * (q[1] * q[3] - q[0] * q[2])),
+    #        cd.horzcat(2 * (q[1] * q[2] - q[0] * q[3]), 1 - 2 * (q[1] ** 2 + q[3] ** 2), 2 * (q[2] * q[3] + q[0] * q[1])),
+    #       cd.horzcat(2 * (q[1] * q[3] + q[0] * q[2]), 2 * (q[2] * q[3] - q[0] * q[1]), 1 - 2 * (q[1] ** 2 + q[2] ** 2))
+    #   )
     Rot = cd.vertcat(
-            cd.horzcat(1 - 2 * (q[2] ** 2 + q[3] ** 2), 2 * (q[1] * q[2] + q[0] * q[3]), 2 * (q[1] * q[3] - q[0] * q[2])),
-            cd.horzcat(2 * (q[1] * q[2] - q[0] * q[3]), 1 - 2 * (q[1] ** 2 + q[3] ** 2), 2 * (q[2] * q[3] + q[0] * q[1])),
-            cd.horzcat(2 * (q[1] * q[3] + q[0] * q[2]), 2 * (q[2] * q[3] - q[0] * q[1]), 1 - 2 * (q[1] ** 2 + q[2] ** 2))
+            cd.horzcat(1 - 2 * (q[2] ** 2 + q[3] ** 2), 2 * (q[1] * q[2] - q[0] * q[3]), 2 * (q[1] * q[3] + q[0] * q[2])),
+            cd.horzcat(2 * (q[1] * q[2] + q[0] * q[3]), 1 - 2 * (q[1] ** 2 + q[3] ** 2), 2 * (q[2] * q[3] - q[0] * q[1])),
+            cd.horzcat(2 * (q[1] * q[3] - q[0] * q[2]), 2 * (q[2] * q[3] + q[0] * q[1]), 1 - 2 * (q[1] ** 2 + q[2] ** 2))
         )
     return Rot
 
@@ -180,15 +230,25 @@ if __name__ == '__main__':
     init_w_B = np.zeros((3,1))
     init_x=np.concatenate([init_r,init_v,init_q,init_w_B],axis=0)
     #print(init_x)
-    uav_env=UAV_env(10,1,np.eye(3),0.5,0.05,1)
+    uav_params={'gravity':10,'m':1,'J_B':np.eye(3),'l_w':0.5,'dt':0.05,'c':1}
+    uav_env=UAV_env(**uav_params)
     uav_env.set_init_state(init_x)
 
-    u=2.6*np.ones((4,1))
-    u[1]+=0.1
-    u[3]-=0.1
+    uav_model=UAV_model(**uav_params)
+    dyn_f=uav_model.get_dyn_f()
 
-    for i in range(15):
+    u=2.6*np.ones((4,1))
+    u[2]+=0.1
+    u[0]-=0.1
+
+    for i in range(100):
+        x=uav_env.get_curr_state()
+        #print('1',x)
         uav_env.step(u)
-        print(uav_env.get_state().T)
+        #print('2',x)
+        x_1=dyn_f(x,u)
+        print(uav_env.get_curr_state()-x_1)
 
     #uav_env.show_animation(flag_2d=False)
+    
+
