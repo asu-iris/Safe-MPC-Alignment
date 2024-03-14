@@ -3,6 +3,7 @@ import casadi as cd
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from matplotlib.animation import FuncAnimation
 from scipy.spatial.transform import Rotation as R
 
@@ -58,6 +59,7 @@ class UAV_env(object):
         self.r_I += self.dt * d_r_I
         self.v_I += self.dt * d_v_I
         self.q_BI += self.dt * d_q
+        self.q_BI /= np.linalg.norm(self.q_BI)
         self.w_B += self.dt * d_w_B
 
         self.curr_x=np.concatenate([self.r_I,self.v_I,self.q_BI,self.w_B],axis=0)
@@ -66,7 +68,7 @@ class UAV_env(object):
     def get_pos(self):
         return self.curr_x[0:3]
     
-    def show_animation(self,flag_2d=False):
+    def show_animation(self,flag_2d=False, center=(4,4,4), radius=2, mode=None):
         def draw_quadrotor(ax_3d, ax_2d, pos, quat, wing_length):
             # Extracting position and attitude information
             x, y, z = pos
@@ -123,6 +125,50 @@ class UAV_env(object):
 
             return
         
+        def draw_circle(ax):
+            # Create data for a sphere
+            u = np.linspace(0, 2 * np.pi, 20)
+            v = np.linspace(0, np.pi, 20)
+            c_x = center[0] + radius * np.outer(np.cos(u), np.sin(v))
+            c_y = center[1] + radius * np.outer(np.sin(u), np.sin(v))
+            c_z = center[2] + radius * np.outer(np.ones(np.size(u)), np.cos(v))
+
+            # Plot the sphere
+            ax_3d.plot_surface(c_x, c_y, c_z, color='b', alpha=0.5)
+
+        def draw_cylinder(ax, height=8, num_points=20):
+            # Generate points for the top circle
+            theta = np.linspace(0, 2*np.pi, num_points)
+            x_top = center[0] + radius * np.cos(theta)
+            y_top = center[1] + radius * np.sin(theta)
+            z_top = height * np.ones(num_points)
+            
+            # Generate points for the bottom circle
+            x_bottom = center[0] + radius * np.cos(theta)
+            y_bottom = center[1] + radius * np.sin(theta)
+            z_bottom = 0 * np.ones(num_points)
+            
+            ax.plot_trisurf(x_top, y_top, z_top, color='b', alpha=0.5)
+            ax.plot_trisurf(x_bottom, y_bottom, z_bottom, color='b', alpha=0.5)
+            # Plot the sides of the cylinder
+            #for i in range(num_points):
+            #    ax.plot([x_top[i], x_bottom[i]], [y_top[i], y_bottom[i]], [z_top[i], z_bottom[i]], color='b')
+
+            verts = []
+            for i in range(num_points-1):
+                verts.append([(x_top[i], y_top[i], z_top[i]), (x_top[i+1], y_top[i+1], z_top[i+1]),
+                              (x_bottom[i+1], y_bottom[i+1], z_bottom[i+1]), (x_bottom[i], y_bottom[i], z_bottom[i])])
+            verts = np.array(verts)
+            poly = Poly3DCollection(verts, alpha=0.5, color='b')
+            ax.add_collection3d(poly)
+
+        def draw_trajectory(ax):
+            arr_traj=np.array(self.x_traj)
+            traj_x_poses=arr_traj[:,0]
+            traj_y_poses=arr_traj[:,1]
+            traj_z_poses=arr_traj[:,2]
+            ax.plot(traj_x_poses, traj_y_poses, traj_z_poses, color='r', alpha=0.5)
+
         fig = plt.figure()
         if flag_2d:
             ax_3d = fig.add_subplot(121, projection='3d')
@@ -131,6 +177,8 @@ class UAV_env(object):
         else:
             ax_3d = fig.add_subplot(111, projection='3d')
             ax_2d = None
+
+        ax_3d.set_box_aspect([1, 1, 1])
         positions=np.array(self.x_traj)[:,0:3]
         quaternions=np.array(self.x_traj)[:,6:10]
 
@@ -139,6 +187,14 @@ class UAV_env(object):
             if flag_2d:
                 ax_2d.clear()
             draw_quadrotor(ax_3d, ax_2d, positions[frame], quaternions[frame], self.l_w)
+            
+            if mode=='ball':
+                draw_circle(ax_3d)
+
+            if mode=='cylinder':
+                draw_cylinder(ax_3d)
+
+            draw_trajectory(ax_3d)
             ax_3d.set_xlim([-1, 8])
             ax_3d.set_ylim([-1, 8])
             ax_3d.set_zlim([-1, 8])
