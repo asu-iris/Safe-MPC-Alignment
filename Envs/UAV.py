@@ -368,5 +368,6 @@ if __name__ == '__main__':
     print('term_cost',term_cost_f(uav_env.get_curr_state()))
 
     uav_env.show_animation(flag_2d=False)
+    print(q_dist(np.array([1,0,0,0]),np.array([-1,0,0,0])))
     
 

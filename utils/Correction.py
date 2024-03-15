@@ -104,6 +104,7 @@ class Correction_Agent(object):
             self.traj_u+=list(traj_xu[start_idx:end_idx])
         self.traj_u=np.array(self.traj_u)
         print('g human',self.g_func(init_state,self.traj_u))
+        #print('ln -g human',np.log(-self.g_func(init_state,self.traj_u)))
         if self.g_func(init_state,self.traj_u) >=0:
             return None
         elif self.g_func(init_state,self.traj_u) <= self.corr_thresh:

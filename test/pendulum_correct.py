@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 
 # get dynamics, set up step cost and terminal cost
 #0.05
-p_model=Pendulum_Model(10,1,1,0.4,0.01)
+p_model=Pendulum_Model(10,1,1,0.4,0.02)
 
 P_matrix=np.array([[0.5,0],
                    [0,0.05]])
@@ -27,7 +27,7 @@ step_func=p_model.get_step_cost(P_matrix,0.1)
 terminal_func=p_model.get_terminal_cost(T_matrix)
 
 # set up safety features
-Horizon=80
+Horizon=40
 Gamma=0.01
 def generate_phi():
         traj=cd.SX.sym('xi',3*Horizon + 2)
@@ -39,7 +39,7 @@ weights_init=np.array([0,0])
 weights_H=np.array([0.6,1])
 
 #construct environment
-p_env=Pendulum_Env(10,1,1,0.4,0.01)
+p_env=Pendulum_Env(10,1,1,0.4,0.02)
 p_env.set_init_state(np.array([0,0]))
 #p_env.set_noise(False)
 #construct correction agent
@@ -50,14 +50,15 @@ agent.set_dyn(dyn_func)
 agent.set_step_cost(step_func)
 agent.set_term_cost(terminal_func)
 agent.set_g(phi_func,weights=weights_H,gamma=Gamma)
-agent.set_threshold(-0.2) #-0.5
+#agent.set_threshold(-0.1) #-0.5
+agent.set_threshold(-0.25) #-0.5
 agent.set_p(0.5)
 agent.construct_graph(horizon=Horizon)
 
 #construct controller
 controller=ocsolver_fast('pendulum control')
 controller.set_state_param(2,[-2*np.pi,-100],[2*np.pi,100])
-controller.set_ctrl_param(1,[-6],[6])
+controller.set_ctrl_param(1,[-1e10],[1e10])
 controller.set_dyn(dyn_func)
 controller.set_step_cost(step_func)
 controller.set_term_cost(terminal_func)
@@ -95,8 +96,12 @@ corr_num=0
 termination_flag=False
 while not termination_flag:
     print('episode',EPISODE)
-    p_env.set_init_state(np.array([0,0]))
-    for i in range(300):
+    # random init
+    init_state=np.array([0,0])
+    init_state[0] += np.random.uniform(0,2*np.pi/3)
+    init_state[1] += np.random.uniform(2,3)
+    p_env.set_init_state(init_state)
+    for i in range(200):
         x=p_env.get_curr_state()
         if np.sqrt(np.sum((x-np.array([np.pi,0]))**2)) <=0.15:
             print('reached desired position')
@@ -121,16 +126,17 @@ while not termination_flag:
             mve_calc.add_constraint(h,b[0])
             mve_calc.add_constraint(h_phi,b_phi[0])
             learned_theta,C=mve_calc.solve()
-            difference=np.linalg.norm(learned_theta-weights_H)
+            #difference=np.linalg.norm(learned_theta-weights_H)
+            difference=learned_theta-weights_H
             vol=np.log(np.linalg.det(C))
             print('leanred safety param',learned_theta)
             theta_log.append(learned_theta)
             print('difference', difference)
-            error_log.append(difference)
+            error_log.append(np.linalg.norm(difference))
             print('volume', vol)
             volume_log.append(vol)
             #mve_calc.draw(C,learned_theta,weights_H)
-            if difference<0.08:
+            if np.max(np.abs(difference))<0.04:
                 print("converged! Final Result: ",learned_theta)
                 termination_flag=True
                 break
@@ -142,6 +148,7 @@ while not termination_flag:
             hb_calculator.construct_graph(horizon=Horizon)
             corr_num+=1
         p_env.step(u)
+    p_env.show_animation()
     EPISODE+=1
 #plot learning process
 plt.figure()
@@ -158,9 +165,9 @@ controller.set_g(phi_func,weights=learned_theta,gamma=Gamma)
 controller.construct_prob(horizon=Horizon)
 controller.reset_warmstart()
 print('demo with learned params')
-for i in range(300):
+for i in range(200):
     x=p_env.get_curr_state()
-    if np.sqrt(np.sum((x-np.array([np.pi,0]))**2)) <=0.04:
+    if np.sqrt(np.sum((x-np.array([np.pi,0]))**2)) <=0.05:
         print('reached desired position')
         break
     print('demo step',i)
