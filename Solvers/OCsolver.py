@@ -272,6 +272,7 @@ class ocsolver_fast(object):
         #print('gamma*ln(-g)', self.gamma*np.log(-g_val))
         #print('B',sol['f'])
         if hasattr(self,'g_flag') and cd.Function('g_theta',[self.traj_xu_flat_t],[self.g_theta_t])(w_opt)>0:
+            print(cd.Function('g_theta',[self.traj_xu_flat_t],[self.g_theta_t])(w_opt))
             raise Exception("violation appears in trajectory solved")
         self.warm_start_sol=w_opt
         return w_opt

@@ -1,6 +1,9 @@
 import casadi as cd
 import numpy as np
-
+import sys,os
+sys.path.append(os.path.abspath(os.path.dirname(os.getcwd())))
+sys.path.append(os.path.abspath(os.getcwd()))
+from Envs.UAV import UAV_env,Quat_Rot
 class Correction_Agent(object):
     def __init__(self,name:str) -> None:
         self.name=name
@@ -116,5 +119,15 @@ class Correction_Agent(object):
             else:
                 print('near boundary')
                 return True
+            
+def uav_trans(world_corr,env:UAV_env):#world corr can be [+-1,0,0] [0,+-1,0], output is 4D correction in u
+    R_B_I=np.array(Quat_Rot(env.curr_x[6:10])).T #from world to body
+    x_corr_b = R_B_I @ world_corr.reshape(-1,1)
+    x_corr_b=x_corr_b.flatten()
+    x_dir_thrust=np.array([-1,0,1,0]).reshape(-1,1)
+    y_dir_thrust=np.array([0,1,0,-1]).reshape(-1,1)
+    z_dir_thrust=np.array([1,1,1,1]).reshape(-1,1)
+    u_x = x_corr_b[0] * x_dir_thrust + x_corr_b[1] * y_dir_thrust +x_corr_b[2] * z_dir_thrust
+    return 0.1*u_x
 
         

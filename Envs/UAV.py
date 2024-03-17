@@ -214,6 +214,53 @@ class UAV_env(object):
         ani = FuncAnimation(fig, update, frames=len(positions), interval=1000*self.dt)
         plt.show()
 
+    def draw_curr_2d(self,ax):
+        pos = self.curr_x.flatten()[0:3]
+        quat = self.curr_x.flatten()[6:10]
+        x, y, z = pos
+        q0, q1, q2, q3 = quat
+            
+        # Defining quadrotor wings tips (IN BODY FRAME)
+        #wing1_tip = np.array([x-wing_length, y, z])
+        #wing2_tip = np.array([x+wing_length, y, z])
+        #wing3_tip = np.array([x, y-wing_length, z])
+        #wing4_tip = np.array([x, y+wing_length, z])
+
+        wing1_tip = np.array([+self.l_w/2, 0, 0])
+        wing2_tip = np.array([0, -self.l_w/2, 0])
+        wing3_tip = np.array([-self.l_w/2, 0, 0])
+        wing4_tip = np.array([0, +self.l_w/2, 0])
+            
+        # Rotate wing tips based on quaternion
+        #rot_I_B_1 = R.from_quat([q1, q2, q3, q0]).as_matrix().T
+        #print('1',rot_I_B_1)
+        rot_I_B = np.array(Quat_Rot(quat.flatten())) #body to the world
+        #print('2',rot_I_B)
+        wing1_tip = rot_I_B @ wing1_tip +pos
+        wing2_tip = rot_I_B @ wing2_tip +pos
+        wing3_tip = rot_I_B @ wing3_tip +pos
+        wing4_tip = rot_I_B @ wing4_tip +pos
+
+        ax.scatter(x, y, color='black', marker='o')
+        ax.scatter(wing1_tip[0], wing1_tip[1], color='r', marker='o')
+        ax.plot((x,wing1_tip[0]),(y, wing1_tip[1]), color='r')
+
+        ax.scatter(wing2_tip[0], wing2_tip[1], color='g', marker='o')
+        ax.plot((x,wing2_tip[0]),(y, wing2_tip[1]), color='b')
+
+        ax.scatter(wing3_tip[0], wing3_tip[1], color='b', marker='o')
+        ax.plot((x,wing3_tip[0]),(y, wing3_tip[1]), color='r')
+
+        ax.scatter(wing4_tip[0], wing4_tip[1], color='y', marker='o')
+        ax.plot((x,wing4_tip[0]),(y, wing4_tip[1]), color='b')
+
+        arr_traj=np.array(self.x_traj)
+        traj_x_poses=arr_traj[:,0]
+        traj_y_poses=arr_traj[:,1]
+        traj_z_poses=arr_traj[:,2]
+        ax.plot(traj_x_poses, traj_y_poses, color='r', alpha=0.5)
+        return
+
 class UAV_model(object):
     def __init__(self,gravity,m,J_B,l_w,dt,c) -> None:
         self.g=gravity
@@ -322,6 +369,7 @@ def Omega(w):
 def q_dist(q_1,q_2):
     I=cd.DM(np.eye(3))
     return 0.5*cd.trace(I-Quat_Rot(q_2).T @ Quat_Rot(q_1))
+
 
 if __name__ == '__main__':
     init_r = np.zeros((3,1))

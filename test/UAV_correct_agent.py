@@ -29,7 +29,7 @@ term_cost_f=uav_model.get_terminal_cost(term_cost_vec)
 # set up safety features
 Horizon=25
 Gamma=0.1
-#Hypothesis space
+#Hypothe.sis space
 hypo_lbs=np.array([-20,-20]) #-6
 hypo_ubs=np.array([-2,-2])
 #simple phi, avoid the circle c:(3,3), r=2 (Severe Gradient Issue, Need to Address)
@@ -40,8 +40,8 @@ def generate_phi_x_2():
     x_dim=13
     u_dim=4
     traj=cd.SX.sym('xi',(x_dim+u_dim)*Horizon + x_dim)
-    x_pos_1=traj[3*(x_dim+u_dim)]
-    y_pos_1=traj[3*(x_dim+u_dim)+1]
+    x_pos_1=traj[6*(x_dim+u_dim)]
+    y_pos_1=traj[6*(x_dim+u_dim)+1]
     z_pos_1=traj[3*(x_dim+u_dim)+2]
     phi=cd.vertcat(cd.DM(5*Radius**2),(x_pos_1-Center[0])*(x_pos_1-Center[0]),(y_pos_1-Center[1])*(y_pos_1-Center[1])) # to make theta_H [-5,-5]
     return cd.Function('phi',[traj],[phi])
@@ -52,7 +52,7 @@ def generate_phi_x_2():
 phi_func=generate_phi_x_2() #traj: [x,u,x,u,..,x] phi:[phi0, phi1, phi2]
 weights_init = (hypo_lbs+hypo_ubs)/2
 weights_H=np.array([-5,-5,])
-
+#weights_H=np.array([-15,-5,])
 agent=Correction_Agent('dummy')
 agent.set_state_dim(13)
 agent.set_ctrl_dim(4)
@@ -63,6 +63,14 @@ agent.set_g(phi_func,weights=weights_H,gamma=Gamma)
 agent.set_threshold(-10) #-0.5
 agent.set_p(0.5)
 agent.construct_graph(horizon=Horizon)
+
+def sim_human(agent_corr):
+    idx_max=np.argmax(agent_corr)
+    idx_min=np.argmin(agent_corr)
+    output=np.zeros(agent_corr.shape)
+    output[idx_max]=1
+    output[idx_min]=-1
+    return output
 
 controller=ocsolver_fast('uav control')
 controller.set_state_param(13,None,None)
@@ -112,6 +120,7 @@ while not termination_flag:
     init_r[1]=Center[1] + np.sin(start_ang) * start_r
     init_v = np.zeros((3,1))
     init_q = np.reshape(np.array([1,0,0,0]),(-1,1))
+    #init_q = np.reshape(np.array([np.sqrt(2)/2,np.sqrt(2)/2,0,0]),(-1,1))
     #print(Quat_Rot(init_q))
     init_w_B = np.zeros((3,1))
     init_x=np.concatenate([init_r,init_v,init_q,init_w_B],axis=0)
@@ -124,6 +133,7 @@ while not termination_flag:
             break
         #print(i)
         u=controller.control(x)
+        print('u',u)
         agent_output=agent.act(controller.opt_traj_t)
         if agent_output==None:
             print('emergency stop')
@@ -131,7 +141,14 @@ while not termination_flag:
         elif type(agent_output)==bool:
             pass
         else:
-            h,b,h_phi,b_phi=hb_calculator.calc_planes(x,controller.opt_traj_t,np.sign(agent_output))
+            print('agent corr',agent_output)
+            print('sim human', sim_human(agent_output[0:4]))
+            interface_corr=np.zeros(agent_output.shape)
+            interface_corr[0:4]=sim_human(agent_output[0:4])
+            agent_output[4:]=0
+            #agent_output=np.sign(agent_output)
+            #agent_output[0]*=0.3
+            h,b,h_phi,b_phi=hb_calculator.calc_planes(x,controller.opt_traj_t,interface_corr)
             print('cutting plane calculated')
             print('h',h)
             print('b',b)

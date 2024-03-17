@@ -73,6 +73,38 @@ class mvesolver(object):
         plt.axis([self.lb[0]-1, self.ub[0]+1,self.lb[1]-1, self.ub[1]+1])
         plt.show()
 
+    def savefig(self, C=None, d=None, ref=None, dir:str='./'):
+        theta = np.arange(-np.pi-0.1,np.pi+0.1,0.1)
+        range_x = np.arange(self.lb[0]-1,self.ub[0]+1,0.1)
+        range_y = np.arange(self.lb[1]-1,self.ub[1]+1,0.1)
+        if C is not None and d is not None:
+            circle = np.vstack((np.cos(theta), np.sin(theta)))
+            #print(np.matmul(C,circle))
+            ellipsis = np.matmul(C,circle)+d.reshape(-1,1)
+            #print(ellipsis.shape)
+            plt.plot(ellipsis[0], ellipsis[1])
+
+        # obtain the line data
+        lines = []
+        for i in range(len(self.constraint_a)):
+            n = self.constraint_a[i].flatten()
+            b = self.constraint_b[i].flatten()
+            if abs(n[1]) < 1e-10:
+                y = range_y
+                x = np.array([b/n[0]]*range_y.size)
+            else:
+                x = range_x
+                y = (b-n[0]*x)/n[1]
+            lines.append( (x,y) )
+        for line in lines:
+            plt.plot(line[0],line[1])
+        plt.scatter(d[0],d[1])
+        if ref is not None:
+            plt.scatter(ref[0],ref[1])
+        plt.axis([self.lb[0]-1, self.ub[0]+1,self.lb[1]-1, self.ub[1]+1])
+        plt.title('mve search')
+        plt.savefig(dir)
+
 if __name__=='__main__':
     testsol=mvesolver('test',2)
     testsol.set_init_constraint([-5,-5],[2,2])

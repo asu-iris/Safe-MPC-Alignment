@@ -96,7 +96,8 @@ class cutter(object):
         self.traj_u=np.array(self.traj_u)
 
         phi=self.features(traj_xu)
-
+        #print('J grad', self.J_grad_func(init_state,self.traj_u))
+        #print('M grad', self.m_grad_func(init_state,self.traj_u))
         # theta^T h <= b
         h=-np.dot(human_corr.T ,self.J_grad_func(init_state,self.traj_u))*phi[1:]
         phi_jacobi=self.phi_Jacobi_func(init_state,self.traj_u)
