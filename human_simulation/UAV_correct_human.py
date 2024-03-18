@@ -39,7 +39,7 @@ def graph_update(ax,env,theta=None):
     ax.set_aspect(1)
     env.draw_curr_2d(ax)
     #draw the obstacle
-    c_1=plt.Circle(xy=(4.5,7),radius=2)
+    c_1=plt.Circle(xy=(5.5,7),radius=2)
     rect_1=plt.Rectangle(xy=(2,2),width=5,height=3)
     #rect_2=plt.Rectangle(xy=(0,9),width=4,height=0.5)
     #rect_3=plt.Rectangle(xy=(2,4),width=0.5,height=5)
@@ -50,16 +50,16 @@ def graph_update(ax,env,theta=None):
     #ax.plot((1,3,7,9),(-1,4,4,-1))
     if theta is not None:
         ang_theta=np.linspace(-np.pi,np.pi,30)
-        x=np.sqrt(20/-theta[0])*np.cos(ang_theta) + 4.5
+        x=np.sqrt(20/-theta[0])*np.cos(ang_theta) + 5.5
         y=np.sqrt(20/-theta[1])*np.sin(ang_theta) + 7
         ax.plot(x,y,color='black')
-    ax.scatter(8,1,marker='*',color='m',s=200)
+    ax.scatter(9,9,marker='*',color='m',s=200)
     plt.draw()
     plt.pause(0.01)
 
 #plt.ion()
 # get dynamics, set up step cost and terminal cost
-uav_params={'gravity':10,'m':1,'J_B':np.eye(3),'l_w':0.5,'dt':0.1,'c':1}
+uav_params={'gravity':10,'m':1,'J_B':np.eye(3),'l_w':0.5,'dt':0.05,'c':1}
 uav_env=UAV_env(**uav_params)
 
 
@@ -69,36 +69,38 @@ dyn_f=uav_model.get_dyn_f()
 #r,v,q,w,u
 #step_cost_vec=np.array([6,8,100,1,10])*1e-2
 #step_cost_vec=np.array([40,60,20,1,10])*1e-3
-step_cost_vec=np.array([40,6,20,1,10])*1e-3
-step_cost_f=uav_model.get_step_cost(step_cost_vec,target_pos=np.array([8,1,5]))
+step_cost_vec=np.array([40,6,40,100,10])*1e-3
+step_cost_vec=np.array([50,10,5,10,15])*1e-3
+step_cost_f=uav_model.get_step_cost(step_cost_vec,target_pos=np.array([9,9,5]))
 #term_cost_vec=np.array([2,6,100,0.1])*1e-1
 #term_cost_vec=np.array([30,30,15,2])*1e-2
-term_cost_vec=np.array([20,5,15,1])*1e-2
-term_cost_f=uav_model.get_terminal_cost(term_cost_vec,target_pos=np.array([8,1,5]))
+term_cost_vec=np.array([20,5,15,100])*1e-2
+term_cost_vec=np.array([20,6,40,50])*1e-2
+term_cost_f=uav_model.get_terminal_cost(term_cost_vec,target_pos=np.array([9,9,5]))
 
 # set up safety features
-Horizon=25
-Gamma=0.5
-hypo_lbs=-2*np.zeros(25)
-hypo_ubs=1*np.ones(25)
+Horizon=50 #25
+Gamma=3
+hypo_lbs=0*np.ones(9)
+hypo_ubs=5*np.ones(9)
 
-hypo_lbs_poly=np.array([0,5,5,-4,-10])
-hypo_ubs_poly=np.array([4,15,15,4,5])
+hypo_lbs_poly=np.array([-5,-5,0,0,-5])
+hypo_ubs_poly=np.array([0,0,20,20,10])
 
-hypo_lbs_2d=np.array([-20,-20]) #-6
+hypo_lbs_2d=np.array([-30,-30]) #-6
 hypo_ubs_2d=np.array([0,0])
 #phi
 def generate_phi_rbf():
     x_dim=13
     u_dim=4
     traj=cd.SX.sym('xi',(x_dim+u_dim)*Horizon + x_dim)
-    x_pos=traj[2*(x_dim+u_dim)]
-    y_pos=traj[2*(x_dim+u_dim)+1]
+    x_pos=traj[4*(x_dim+u_dim)]
+    y_pos=traj[4*(x_dim+u_dim)+1]
     z_pos_1=traj[2*(x_dim+u_dim)+2]
     phi_list=[]
-    phi_list.append(0.05)
-    X_c=np.linspace(0,10,5)
-    Y_c=np.linspace(1,10,5)
+    phi_list.append(-2) #-4:16
+    X_c=np.linspace(4,8,3)
+    Y_c=np.linspace(4.5,9,3)
     grid_x,grid_y=np.meshgrid(X_c,Y_c)
     grid_x=grid_x.reshape(-1,1)
     grid_y=grid_y.reshape(-1,1)
@@ -106,7 +108,7 @@ def generate_phi_rbf():
     for center in centers:
         print(center)
         phi_i=rbf(x_pos,y_pos,center[0],center[1],1.5)
-        phi_list.append(-phi_i)
+        phi_list.append(phi_i)
     
     phi=cd.vertcat(*phi_list)
     return cd.Function('phi',[traj],[phi])
@@ -115,26 +117,27 @@ def generate_phi_poly():
     x_dim=13
     u_dim=4
     traj=cd.SX.sym('xi',(x_dim+u_dim)*Horizon + x_dim)
-    x_pos=traj[3*(x_dim+u_dim)]
-    y_pos=traj[3*(x_dim+u_dim)+1]
-    phi_list=[-x_pos**2]
+    x_pos=traj[5*(x_dim+u_dim)]
+    y_pos=traj[5*(x_dim+u_dim)+1]
+    phi_list=[-80]
     phi_list.append(-y_pos**2)
+    phi_list.append(-x_pos**2)
     phi_list.append(x_pos)
     phi_list.append(y_pos)
     phi_list.append(-y_pos*x_pos)
-    phi_list.append(1)
+    
     phi=cd.vertcat(*phi_list)
     return cd.Function('phi',[traj],[phi])
 
-Center=(4.5,7,3)
+Center=(5.5,7,3)
 Radius=2
 
 def generate_phi_x_2():
     x_dim=13
     u_dim=4
     traj=cd.SX.sym('xi',(x_dim+u_dim)*Horizon + x_dim)
-    x_pos_1=traj[4*(x_dim+u_dim)]
-    y_pos_1=traj[4*(x_dim+u_dim)+1]
+    x_pos_1=traj[5*(x_dim+u_dim)]
+    y_pos_1=traj[5*(x_dim+u_dim)+1]
     z_pos_1=traj[4*(x_dim+u_dim)+2]
     phi=cd.vertcat(cd.DM(5*Radius**2),(x_pos_1-Center[0])*(x_pos_1-Center[0]),(y_pos_1-Center[1])*(y_pos_1-Center[1])) # to make theta_H [-5,-5]
     return cd.Function('phi',[traj],[phi])
@@ -142,11 +145,11 @@ def generate_phi_x_2():
 #phi_func = generate_phi_poly()
 #weights_init = (hypo_lbs_poly+hypo_ubs_poly)/2
 
-#phi_func = generate_phi_rbf()
-#weights_init = (hypo_lbs+hypo_ubs)/2
+phi_func = generate_phi_rbf()
+weights_init = (hypo_lbs+hypo_ubs)/2
 
-phi_func = generate_phi_x_2()
-weights_init = (hypo_lbs_2d+hypo_ubs_2d)/2
+#phi_func = generate_phi_x_2()
+#weights_init = (hypo_lbs_2d+hypo_ubs_2d)/2
 #ctrl
 controller=ocsolver_fast('uav control')
 controller.set_state_param(13,None,None)
@@ -169,9 +172,9 @@ hb_calculator.set_g(phi_func,weights=weights_init,gamma=Gamma)
 hb_calculator.construct_graph(horizon=Horizon)
 
 #construct MVESolver
-mve_calc=mvesolver('uav_mve',2)
+mve_calc=mvesolver('uav_mve',9)
 
-mve_calc.set_init_constraint(hypo_lbs_2d, hypo_ubs_2d) #Theta_0
+mve_calc.set_init_constraint(hypo_lbs, hypo_ubs) #Theta_0
 
 learned_theta=np.array(weights_init)
 #learning logs
@@ -190,11 +193,13 @@ while True:
     #print(Quat_Rot(init_q))
     init_w_B = np.zeros((3,1))
     init_x=np.concatenate([init_r,init_v,init_q,init_w_B],axis=0)
-    init_x[0]=np.random.uniform(0.5,1.5)
-    init_x[1]=np.random.uniform(7.5,9.5)
+    init_x[0]=np.random.uniform(0.5,2.5)
+    #init_x[0]=1
+    init_x[1]=np.random.uniform(0.5,8.5)
+    #init_x[1]=1
     print('init',init_x.T)
     uav_env.set_init_state(init_x) 
-    for i in range(100):
+    for i in range(200):
         if not PAUSE[0]:
             if MSG[0]:
                 # correction
@@ -202,19 +207,19 @@ while True:
                 if MSG[0] == 'up': #y+
                     #print(uav_trans(np.array([0,1,0]),uav_env))
                     #human_corr=uav_trans(np.array([0,1,0]),uav_env)
-                    human_corr=np.array([-1,0,1,0])
+                    human_corr=np.array([-0.5,0,1,0])
                 if MSG[0] == 'down': #y-
                     #print(uav_trans(np.array([0,-1,0]),uav_env))
                     #human_corr=uav_trans(np.array([0,-1,0]),uav_env)
-                    human_corr=np.array([1,0,-1,0])
+                    human_corr=np.array([1,0,-0.5,0])
                 if MSG[0] == 'right': #x+
                     #print(uav_trans(np.array([1,0,0]),uav_env))
                     #human_corr=uav_trans(np.array([1,0,0]),uav_env)
-                    human_corr=np.array([0,-1,0,1])
+                    human_corr=np.array([0,-0.5,0,1])
                 if MSG[0] == 'left': #x-
                     #print(uav_trans(np.array([-1,0,0]),uav_env))
                     #human_corr=uav_trans(np.array([-1,0,0]),uav_env)
-                    human_corr=np.array([0,1,0,-1])
+                    human_corr=np.array([0,1,0,-0.5])
                 if MSG[0]=='quit' or MSG[0]=='reset':
                     break
                 MSG[0]=None
@@ -232,7 +237,8 @@ while True:
                 mve_calc.add_constraint(h,b[0])
                 mve_calc.add_constraint(h_phi,b_phi[0])
                 learned_theta,C=mve_calc.solve()
-                mve_calc.savefig(C,learned_theta,np.array([-5,-5]),dir='D:\\ASU_Work\\Research\\learn safe mpc\\experiment\\results\\cut_figs\\' +str(num_corr)+'.png')
+                print('vol',np.log(np.linalg.det(C)))
+                #mve_calc.savefig(C,learned_theta,np.array([-5,-5]),dir='D:\\ASU_Work\\Research\\learn safe mpc\\experiment\\results\\cut_figs\\' +str(num_corr)+'.png')
                 controller.set_g(phi_func,weights=learned_theta,gamma=Gamma)
                 controller.construct_prob(horizon=Horizon)
                 hb_calculator.set_g(phi_func,weights=learned_theta,gamma=Gamma)
@@ -246,13 +252,13 @@ while True:
             x=uav_env.get_curr_state()
             u=controller.control(x)
             uav_env.step(u)
-            graph_update(ax_2d,uav_env,learned_theta)
+            graph_update(ax_2d,uav_env,None)
             
             #num+=1
-            time.sleep(0.2)  
+            time.sleep(0.1)  
         else:
             while PAUSE[0]:
-                time.sleep(0.2)
+                time.sleep(0.1)
 
     if MSG[0]=='reset':
         MSG[0]=None

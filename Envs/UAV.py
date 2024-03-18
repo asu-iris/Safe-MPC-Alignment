@@ -299,6 +299,7 @@ class UAV_model(object):
         self.r_I_1 = self.r_I + self.dt * d_r_I
         self.v_I_1 = self.v_I + self.dt * d_v_I
         self.q_BI_1 = self.q_BI + self.dt * d_q
+        #self.q_BI_1 = self.q_BI_1 / cd.norm_2(self.q_BI_1 )
         self.w_B_1 = self.w_B + self.dt * d_w_B
 
         self.x_t_1=cd.vertcat(self.r_I_1,self.v_I_1,self.q_BI_1,self.w_B_1)

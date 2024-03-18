@@ -26,14 +26,14 @@ dyn_f=uav_model.get_dyn_f()
 
 #r,v,q,w,u
 #step_cost_vec=np.array([6,8,100,1,10])*1e-2
-step_cost_vec=np.array([40,5,20,1,10])*1e-3
+step_cost_vec=np.array([5,5,5,1,15])*1e-3
 step_cost_f=uav_model.get_step_cost(step_cost_vec)
 #term_cost_vec=np.array([2,6,100,0.1])*1e-1
-term_cost_vec=np.array([20,6,10,2])*1e-2
+term_cost_vec=np.array([20,6,5,50])*1e-1
 term_cost_f=uav_model.get_terminal_cost(term_cost_vec)
 
 # set up safety features
-Horizon=25
+Horizon=5
 #simple phi, avoid the circle c:(3,3), r=2 (Severe Gradient Issue, Need to Address)
 Center=(3,3.1,3)
 Radius=2.25
@@ -51,8 +51,8 @@ def generate_phi_x_2():
     x_dim=13
     u_dim=4
     traj=cd.SX.sym('xi',(x_dim+u_dim)*Horizon + x_dim)
-    x_pos_1=traj[2*(x_dim+u_dim)]
-    y_pos_1=traj[2*(x_dim+u_dim)+1]
+    x_pos_1=traj[4*(x_dim+u_dim)]
+    y_pos_1=traj[4*(x_dim+u_dim)+1]
     z_pos_1=traj[2*(x_dim+u_dim)+2]
     phi=cd.vertcat(cd.DM(Radius**2),(x_pos_1-Center[0])*(x_pos_1-Center[0]),(y_pos_1-Center[1])*(y_pos_1-Center[1]))
     return cd.Function('phi',[traj],[phi])
