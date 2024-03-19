@@ -18,7 +18,7 @@ from utils.Correction import Correction_Agent, uav_trans
 from utils.RBF import rbf
 
 from utils.Visualize import uav_visualizer
-from utils.Keyboard import uav_key_handler
+from utils.Keyboard import uav_key_handler,key_interface,remove_conflict
 
 # list for msg passing
 PAUSE = [False]
@@ -35,7 +35,7 @@ radius = 2
 
 # set up safety features
 Horizon = 20  # 25
-Gamma = 10
+Gamma = 1 #10
 
 
 
@@ -150,8 +150,8 @@ hb_calculator.construct_graph(horizon=Horizon)
 mve_calc = mvesolver('uav_mve', theta_dim)
 mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)  # Theta_0
 #########################################################################################
-
-
+remove_conflict(plt.rcParams)
+#print(plt.rcParams)
 num_corr = 0
 while True:
 
@@ -175,28 +175,7 @@ while True:
             if MSG[0]:
                 # correction
                 # print('message ',MSG[0])
-                if MSG[0] == 'up':  # y+
-                    # print(uav_trans(np.array([0,1,0]),uav_env))
-                    # human_corr=uav_trans(np.array([0,1,0]),uav_env)
-                    human_corr = np.array([-1, 0, 1, 0])
-                    print('current key:', MSG[0])
-                if MSG[0] == 'down':  # y-
-                    # print(uav_trans(np.array([0,-1,0]),uav_env))
-                    # human_corr=uav_trans(np.array([0,-1,0]),uav_env)
-                    human_corr = np.array([1, 0, -1, 0])
-                    print('current key:', MSG[0])
-
-                if MSG[0] == 'right':  # x+
-                    # print(uav_trans(np.array([1,0,0]),uav_env))
-                    # human_corr=uav_trans(np.array([1,0,0]),uav_env)
-                    human_corr = np.array([0, -1, 0, 1])
-                    print('current key:', MSG[0])
-
-                if MSG[0] == 'left':  # x-
-                    # print(uav_trans(np.array([-1,0,0]),uav_env))
-                    # human_corr=uav_trans(np.array([-1,0,0]),uav_env)
-                    human_corr = np.array([0, 1, 0, -1])
-                    print('current key:', MSG[0])
+                human_corr=key_interface(MSG)
 
                 if MSG[0] == 'quit' or MSG[0] == 'reset':
                     break
