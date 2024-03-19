@@ -12,10 +12,11 @@ from Envs.UAV import UAV_env, UAV_model
 from Solvers.OCsolver import ocsolver_v2
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import cm
 from Solvers.Cutter import cutter_v2
 from Solvers.MVEsolver import mvesolver
 from utils.Correction import Correction_Agent, uav_trans
-from utils.RBF import rbf
+from utils.RBF import generate_phi_rbf,gen_eval_rbf
 
 from utils.Visualize import uav_visualizer
 from utils.Keyboard import uav_key_handler,key_interface,remove_conflict
@@ -37,66 +38,10 @@ radius = 2
 Horizon = 20  # 25
 Gamma = 1 #10
 
-
-
-def generate_phi_x_single():
-    x_dim = 13
-    u_dim = 4
-    traj = cd.SX.sym('xi', (x_dim + u_dim) * Horizon + x_dim)
-    x_pos_1 = traj[5 * (x_dim + u_dim)]
-    y_pos_1 = traj[5 * (x_dim + u_dim) + 1]
-    phi = cd.vertcat(cd.DM(1 * radius ** 2), (x_pos_1 - center[0]) * (x_pos_1 - center[0]),
-                     (y_pos_1 - center[1]) * (y_pos_1 - center[1]))  # to make theta_H [-5,-5]
-    return cd.Function('phi', [traj], [phi])
-
-
-def generate_phi_x_cum():
-    x_dim = 13
-    u_dim = 4
-    traj = cd.SX.sym('xi', (x_dim + u_dim) * Horizon + x_dim)
-    sum_phi = np.zeros(3)
-    for t in range(Horizon):
-        x_pos_t = traj[t * (x_dim + u_dim)]
-        y_pos_t = traj[t * (x_dim + u_dim) + 1]
-        phi = cd.vertcat(cd.DM(radius ** 2), (x_pos_t - center[0]) * (x_pos_t - center[0]),
-                         (y_pos_t - center[1]) * (y_pos_t - center[1]))  # to make theta_H [-5,-5]
-        sum_phi += phi
-    return cd.Function('phi', [traj], [sum_phi])
-
-
-def generate_phi_rbf():
-    x_dim = 13
-    u_dim = 4
-    traj = cd.SX.sym('xi', (x_dim + u_dim) * Horizon + x_dim)
-    x_pos = traj[5 * (x_dim + u_dim)]
-    y_pos = traj[5 * (x_dim + u_dim) + 1]
-    z_pos_1 = traj[2 * (x_dim + u_dim) + 2]
-
-    sum_phi = np.zeros(3)
-    for t in range(Horizon):
-        phi_list = []
-        phi_list.append(-2)  # -4:16
-        X_c = np.linspace(4, 6, 3)
-        Y_c = np.linspace(4, 6, 3)
-        grid_x, grid_y = np.meshgrid(X_c, Y_c)
-        grid_x = grid_x.reshape(-1, 1)
-        grid_y = grid_y.reshape(-1, 1)
-        centers = np.concatenate([grid_x, grid_y], axis=1)
-        for center in centers:
-            print(center)
-            phi_i = rbf(x_pos, y_pos, center[0], center[1], 1.5)
-            phi_list.append(-phi_i)
-
-        phi = cd.vertcat(*phi_list)
-    return cd.Function('phi', [traj], [phi])
-
-
 phi_func = generate_phi_rbf()
-theta_dim = 9
+theta_dim = 25
 hypo_lbs = -5 * np.ones(theta_dim)
 hypo_ubs = 0 * np.ones(theta_dim)
-
-
 
 ######################################################################################
 # get dynamics, set up step cost and terminal cost
@@ -128,19 +73,14 @@ controller.set_step_cost(step_cost_f)
 controller.set_term_cost(term_cost_f)
 controller.set_g(phi_func, gamma=Gamma)
 controller.construct_prob(horizon=Horizon)
-learned_theta = (hypo_lbs + hypo_ubs) / 2
+init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 ######################################################################################
 
 
 #########################################################################################
 #  cutter
 hb_calculator = cutter_v2('uav cut')
-hb_calculator.set_state_dim(13)
-hb_calculator.set_ctrl_dim(4)
-hb_calculator.set_dyn(dyn_f)
-hb_calculator.set_step_cost(step_cost_f)
-hb_calculator.set_term_cost(term_cost_f)
-hb_calculator.set_g(phi_func, gamma=Gamma)
+hb_calculator.from_controller(controller)
 hb_calculator.construct_graph(horizon=Horizon)
 #########################################################################################
 
@@ -210,4 +150,34 @@ while True:
 
     if MSG[0]=='quit':
         break
+
+plt.ioff()    
+print('finish')
+eval_func_1=gen_eval_rbf(init_theta)
+eval_func_2=gen_eval_rbf(learned_theta)
+X_eval = np.linspace(0, 10, 10)
+Y_eval = np.linspace(0, 10, 10)
+grid_x, grid_y = np.meshgrid(X_eval, Y_eval)
+grid_x = grid_x.reshape(-1, 1)
+grid_y = grid_y.reshape(-1, 1)
+points = np.concatenate([grid_x, grid_y], axis=1)
+z_1=eval_func_1(points.T)
+z_2=eval_func_2(points.T)
+
+fig=plt.figure()
+ax=plt.axes(projection='3d')
+ax.plot_trisurf(points[:,0].flatten(),points[:,1].flatten(),z_1.full().flatten(),cmap=cm.coolwarm)
+ax.set_zlim(-5, 1)
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_title('original')
+#ax.plot_surface(grid_x,grid_y,z.full().reshape(-1,1),cmap=cm.coolwarm)
+fig=plt.figure()
+ax=plt.axes(projection='3d')
+ax.set_zlim(-5, 1)
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.plot_trisurf(points[:,0].flatten(),points[:,1].flatten(),z_2.full().flatten(),cmap=cm.coolwarm)
+ax.set_title('learned')
+plt.show()
 

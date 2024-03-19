@@ -147,6 +147,14 @@ class cutter_v2(object):
         self.gamma=gamma
         self.g_flag=True
         
+    def from_controller(self,controller):
+        self.set_state_dim(controller.x_dim)
+        self.set_ctrl_dim(controller.u_dim)
+        self.set_dyn(controller.dyn_f)
+        self.set_step_cost(controller.step_cost)
+        self.set_term_cost(controller.terminal_cost)
+        assert hasattr(controller,'g_flag'),'no safety constraint in controller'
+        self.set_g(controller.features,controller.gamma)
 
     def construct_graph(self,horizon):
         assert hasattr(self,'x_dim'), "missing x_dim"
