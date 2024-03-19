@@ -7,7 +7,7 @@ from Envs.UAV import UAV_env,UAV_model
 from Solvers.OCsolver import ocsolver,ocsolver_fast,ocsolver_inner_Barrier
 import numpy as np
 from matplotlib import pyplot as plt
-from Solvers.Cutter import cutter
+from Solvers.Cutter import cutter,cutter_v2
 from Solvers.MVEsolver import mvesolver
 from utils.Correction import Correction_Agent
 # get dynamics, set up step cost and terminal cost
@@ -97,6 +97,15 @@ hb_calculator.set_term_cost(term_cost_f)
 hb_calculator.set_g(phi_func,weights=weights_init,gamma=Gamma)
 hb_calculator.construct_graph(horizon=Horizon)
 
+cut_2=cutter_v2('uav cut')
+cut_2.set_state_dim(13)
+cut_2.set_ctrl_dim(4)
+cut_2.set_dyn(dyn_f)
+cut_2.set_step_cost(step_cost_f)
+cut_2.set_term_cost(term_cost_f)
+cut_2.set_g(phi_func,gamma=Gamma)
+cut_2.construct_graph(horizon=Horizon)
+
 #construct MVESolver
 mve_calc=mvesolver('uav_mve',2)
 
@@ -153,13 +162,14 @@ while not termination_flag:
             agent_output[4:]=0
             #agent_output=np.sign(agent_output)
             #agent_output[0]*=0.3
-            h,b,h_phi,b_phi=hb_calculator.calc_planes(x,controller.opt_traj_t,interface_corr)
+            #h,b,h_phi,b_phi=hb_calculator.calc_planes(x,controller.opt_traj_t,interface_corr)
+            h,b,h_phi,b_phi=cut_2.calc_planes(learned_theta,x,controller.opt_traj_t,interface_corr)
             print('cutting plane calculated')
-            print('h',h)
-            print('b',b)
-            print('diff', h.T @ learned_theta - b)
-            print('h_phi',h_phi)
-            print('b_phi',b_phi)
+            #print('h diff',cd.norm_2(h-h_2))
+            #print('b diff',cd.norm_2(b-b_2))
+            #print('diff', h.T @ learned_theta - b)
+            #print('h_phi diff',cd.norm_2(h_phi-h_phi_2))
+            #print('b_phi diff',cd.norm_2(b_phi-b_phi_2))
 
             mve_calc.add_constraint(h,b[0])
             mve_calc.add_constraint(h_phi,b_phi[0])
@@ -182,8 +192,8 @@ while not termination_flag:
             controller.set_g(phi_func,weights=learned_theta,gamma=Gamma)
             controller.construct_prob(horizon=Horizon)
 
-            hb_calculator.set_g(phi_func,weights=learned_theta,gamma=Gamma)
-            hb_calculator.construct_graph(horizon=Horizon)
+            #hb_calculator.set_g(phi_func,weights=learned_theta,gamma=Gamma)
+            #hb_calculator.construct_graph(horizon=Horizon)
             corr_num+=1
         uav_env.step(u)
     #uav_env.show_animation(center=Center,radius=Radius,mode='cylinder')

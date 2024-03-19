@@ -5,6 +5,7 @@ sys.path.append(os.path.abspath(os.path.dirname(os.getcwd())))
 sys.path.append(os.path.abspath(os.getcwd()))
 from Envs.UAV import UAV_env,Quat_Rot
 from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class uav_visualizer(object):
     def __init__(self,env:UAV_env,space_xyzmin,space_xyzmax) -> None:
@@ -27,6 +28,7 @@ class uav_visualizer(object):
             #obstacle
             #c_1=plt.Circle(xy=(5.5,7),radius=2)
             #self.ax.add_patch(c_1)
+            self.draw_cylinder()
         
         else:
             self.clear_uav()
@@ -85,6 +87,35 @@ class uav_visualizer(object):
         self.wing_4_point.remove()
 
         self.body_point.remove()
+
+    def draw_cylinder(self, height=8, num_points=20):
+
+        center = (5, 5, 3)
+        radius = 2
+        # Generate points for the top circle
+        theta = np.linspace(0, 2 * np.pi, num_points)
+        x_top = center[0] + radius * np.cos(theta)
+        y_top = center[1] + radius * np.sin(theta)
+        z_top = height * np.ones(num_points)
+
+        # Generate points for the bottom circle
+        x_bottom = center[0] + radius * np.cos(theta)
+        y_bottom = center[1] + radius * np.sin(theta)
+        z_bottom = 0 * np.ones(num_points)
+
+        self.ax.plot_trisurf(x_top, y_top, z_top, color='b', alpha=0.5)
+        self.ax.plot_trisurf(x_bottom, y_bottom, z_bottom, color='b', alpha=0.5)
+        # Plot the sides of the cylinder
+        # for i in range(num_points):
+        #    ax.plot([x_top[i], x_bottom[i]], [y_top[i], y_bottom[i]], [z_top[i], z_bottom[i]], color='b')
+
+        verts = []
+        for i in range(num_points - 1):
+            verts.append([(x_top[i], y_top[i], z_top[i]), (x_top[i + 1], y_top[i + 1], z_top[i + 1]),
+                          (x_bottom[i + 1], y_bottom[i + 1], z_bottom[i + 1]), (x_bottom[i], y_bottom[i], z_bottom[i])])
+        verts = np.array(verts)
+        poly = Poly3DCollection(verts, alpha=0.5, color='b')
+        self.ax.add_collection3d(poly)
 
 
 

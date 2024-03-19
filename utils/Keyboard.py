@@ -14,7 +14,7 @@ def uav_key_handler(key,pause,msg):
     else:
         pass
 
-    if pause[0]:
+    if not pause[0]:
         if key==keyboard.Key.enter:
             print('emergency stop')
             msg[0]='reset'
