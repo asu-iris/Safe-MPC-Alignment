@@ -31,22 +31,30 @@ listener = keyboard.Listener(
     on_release=None)
 listener.start()
 
+
 center = (5, 5, 3)
 radius = 2
 
 # set up safety features
-Horizon = 10  # 25
-Gamma = 1 #10
+Horizon = 5  # 25
+Gamma = 5 #10
 
-rbf_mode='gau_rbf_xy'
-phi_func = generate_phi_rbf(Horizon,mode=rbf_mode)
-theta_dim = 25
+rbf_mode='gau_rbf_xyz'
+#rbf_X_c=np.array([2,4,6])
+rbf_X_c=np.array([2,4,6])
+#rbf_Y_c=np.linspace(2,8,4)
+#rbf_Z_c=np.linspace(2,8,4)
+rbf_Y_c=np.linspace(0,10,5)
+rbf_Z_c=np.linspace(0,10,5)
+phi_func = generate_phi_rbf(Horizon,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.5,bias=-2,mode=rbf_mode)
+
+theta_dim = 75
 hypo_lbs = -5 * np.ones(theta_dim)
 hypo_ubs = 0 * np.ones(theta_dim)
 
 ######################################################################################
 # get dynamics, set up step cost and terminal cost
-uav_params = {'gravity': 10, 'm': 0.05, 'J_B': 0.01 * np.eye(3), 'l_w': 0.5, 'dt': 0.1, 'c': 1}
+uav_params = {'gravity': 10, 'm': 0.01, 'J_B': 0.01 * np.eye(3), 'l_w': 0.75, 'dt': 0.1, 'c': 1}
 uav_env = UAV_env(**uav_params)
 uav_model = UAV_model(**uav_params)
 dyn_f = uav_model.get_dyn_f()
@@ -54,7 +62,7 @@ dyn_f = uav_model.get_dyn_f()
 
 
 ######################################################################################
-visualizer = uav_visualizer(uav_env, [0, 0, 0], [10, 10, 10])
+visualizer = uav_visualizer(uav_env, [0, 0, 0], [10, 10, 10],mode='wall')
 visualizer.render_init()
 ######################################################################################
 
@@ -111,7 +119,7 @@ while True:
     # print('init state', init_x.T)
 
     uav_env.set_init_state(init_x)
-    for i in range(120):
+    for i in range(200):
         if not PAUSE[0]:
             if MSG[0]:
                 # correction
@@ -139,7 +147,7 @@ while True:
             x = uav_env.get_curr_state()
             u = controller.control(x, weights=learned_theta)
             uav_env.step(u)
-            visualizer.render_update(scale_ratio=2.5)
+            visualizer.render_update(scale_ratio=1.5)
             time.sleep(0.05)
 
         else:
@@ -151,54 +159,3 @@ while True:
 
     if MSG[0]=='quit':
         break
-
-plt.ioff()    
-print('finish')
-eval_func_1=gen_eval_rbf(init_theta,mode=rbf_mode)
-eval_func_2=gen_eval_rbf(learned_theta,mode=rbf_mode)
-X_eval = np.linspace(0, 10, 50)
-Y_eval = np.linspace(0, 10, 50)
-grid_x_raw, grid_y_raw = np.meshgrid(X_eval, Y_eval)
-grid_x = grid_x_raw.reshape(-1, 1)
-grid_y = grid_y_raw.reshape(-1, 1)
-points = np.concatenate([grid_x, grid_y], axis=1)
-z_1=eval_func_1(points.T)
-z_2=eval_func_2(points.T)
-
-fig=plt.figure()
-ax=plt.axes(projection='3d')
-ax.plot_trisurf(points[:,0].flatten(),points[:,1].flatten(),z_1.full().flatten(),cmap=cm.coolwarm)
-ax.set_zlim(-5, 1)
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_title('original')
-#ax.plot_surface(grid_x,grid_y,z.full().reshape(-1,1),cmap=cm.coolwarm)
-fig=plt.figure()
-ax=plt.axes(projection='3d')
-ax.set_zlim(-5, 1)
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.plot_trisurf(points[:,0].flatten(),points[:,1].flatten(),z_2.full().flatten(),cmap=cm.coolwarm)
-ax.set_title('learned')
-
-fig=plt.figure()
-ax=plt.axes()
-levels=np.arange(-6,3,0.02)
-plt.contourf(grid_x_raw,grid_y_raw,z_1.full().reshape(50,50),levels,cmap=plt.get_cmap('Spectral'))
-plt.colorbar(label='Function value')
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_title('original')
-
-
-fig=plt.figure()
-ax=plt.axes()
-levels=np.arange(-6,3,0.02)
-plt.contourf(grid_x_raw,grid_y_raw,z_2.full().reshape(50,50),levels,cmap=plt.get_cmap('Spectral'))
-plt.colorbar(label='Function value')
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_title('learned')
-#plt.colorbar(label='Function value')
-
-plt.show()

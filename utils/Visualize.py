@@ -8,10 +8,11 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class uav_visualizer(object):
-    def __init__(self,env:UAV_env,space_xyzmin,space_xyzmax) -> None:
+    def __init__(self,env:UAV_env,space_xyzmin,space_xyzmax,mode='cylinder') -> None:
         self.env=env
         self.space_xyzmin=np.array(space_xyzmin)
         self.space_xyzmax=np.array(space_xyzmax)
+        self.mode=mode
 
     def render_init(self):
         if not hasattr(self, 'ax'):
@@ -28,7 +29,10 @@ class uav_visualizer(object):
             #obstacle
             #c_1=plt.Circle(xy=(5.5,7),radius=2)
             #self.ax.add_patch(c_1)
-            self.draw_cylinder()
+            if self.mode=='cylinder':
+                self.draw_cylinder()
+            elif self.mode=='wall':
+                self.draw_wall_with_hole_cubes()
         
         else:
             self.clear_uav()
@@ -116,6 +120,36 @@ class uav_visualizer(object):
         verts = np.array(verts)
         poly = Poly3DCollection(verts, alpha=0.5, color='b')
         self.ax.add_collection3d(poly)
+
+    def draw_wall_with_hole_cubes(self):
+        # Define wall dimensions
+        wall_width = 1 #x
+        wall_height = 10 #y
+        wall_depth = 10 #z
+
+        wall_x=5
+        wall_y=0
+        # Define cube dimensions
+        cube_size = 1.0
+
+        # Define hole dimensions
+        hole_width = 4
+        hole_height = 3
+        hole_depth = 2
+        hole_x = 3
+        hole_y = 2
+        hole_z = 4
+
+        wall_color = (0.5, 0.5, 0.5, 0.6)
+        # Plot cubes for the wall
+        for x in np.arange(wall_x, wall_x+wall_width, cube_size):
+            for y in np.arange(wall_y, wall_y+wall_height, cube_size):
+                for z in np.arange(0, wall_depth, cube_size):
+                    # Exclude cubes inside the hole
+                    if not (hole_y <= y < hole_y + hole_height and hole_z <= z < hole_z + hole_depth):
+                        self.ax.bar3d(x, y, z, cube_size, cube_size, cube_size, color=wall_color)
+
+
 
 
 

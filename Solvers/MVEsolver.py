@@ -33,8 +33,8 @@ class mvesolver(object):
         for a,b in zip(self.constraint_a,self.constraint_b):
             constraints.append(cp.norm2(C @ a) + a.T @ d <= b)
         prob = cp.Problem(cp.Minimize(-cp.log_det(C)), constraints)
-        prob.solve(solver=cp.MOSEK, verbose=False)
-        #prob.solve(verbose=False)
+        #prob.solve(solver=cp.MOSEK, verbose=False)
+        prob.solve(verbose=False)
         #print(prob.status)
         if prob.status=='infeasible':
             raise RuntimeError('MVEsolver: infeasible region')

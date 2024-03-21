@@ -25,11 +25,11 @@ def uav_key_handler(key,pause,msg):
         if key==keyboard.Key.up:
         #if key.char == 'w':
             #print('setting up corr')
-            msg[0]='up'
+            msg[0]='forward'
         elif key==keyboard.Key.down:
         #elif key.char == 's':
             #print('setting down corr')
-            msg[0]='down'
+            msg[0]='back'
         elif key==keyboard.Key.left:
         #elif key.char == 'a':
             #print('setting left corr')
@@ -38,19 +38,36 @@ def uav_key_handler(key,pause,msg):
         #elif key.char == 'd':
             #print('setting right corr') 
             msg[0]='right'
+        elif key==keyboard.Key.shift_r:
+        #elif key.char == 'd':
+            #print('setting right corr') 
+            msg[0]='high'
+        elif key==keyboard.Key.ctrl_r:
+        #elif key.char == 'd':
+            #print('setting right corr') 
+            msg[0]='low'
         
 
 def key_interface(MSG):
     human_corr=None
-    if MSG[0] == 'up':  # y+
+    if MSG[0] == 'forward':  # y+
         human_corr = np.array([-1, 0, 1, 0])
         print('current key:', MSG[0])
-    if MSG[0] == 'down':  # y-
+
+    if MSG[0] == 'back':  # y-
         human_corr = np.array([1, 0, -1, 0])
         print('current key:', MSG[0])
 
     if MSG[0] == 'right':  # x+
         human_corr = np.array([0, -1, 0, 1])
+        print('current key:', MSG[0])
+
+    if MSG[0] == 'high':  # x-
+        human_corr = np.array([1,1,1,1])
+        print('current key:', MSG[0])
+
+    if MSG[0] == 'low':  # x+
+        human_corr = np.array([-1,-1,-1,-1])
         print('current key:', MSG[0])
 
     if MSG[0] == 'left':  # x-
