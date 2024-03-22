@@ -39,39 +39,33 @@ radius = 2
 Horizon = 15  # 25
 Gamma = 1 #10
 
-rbf_mode='gau_rbf_xyz'
+#rbf_mode='gau_rbf_xyz'
+rbf_mode='gau_rbf_xyz_cum'
 #rbf_X_c=np.array([2,4,6])
-rbf_X_c=np.array([6])
+rbf_X_c=np.array([10.5])
 #rbf_Y_c=np.linspace(2,8,4)
 #rbf_Z_c=np.linspace(2,8,4)
-rbf_Y_c=np.linspace(0,10,5)
-rbf_Z_c=np.linspace(0,10,5)
+rbf_Y_c=np.linspace(0,10,7)#5
+rbf_Z_c=np.linspace(0,10,7)#5
 phi_func = generate_phi_rbf(Horizon,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.5,bias=-1,mode=rbf_mode)
 
-theta_dim = 25
-hypo_lbs = -100 * np.ones(theta_dim)
-hypo_ubs = 48 * np.ones(theta_dim)
+theta_dim = 49
+hypo_lbs = -70 * np.ones(theta_dim)
+hypo_ubs = 100 * np.ones(theta_dim)
 
 ######################################################################################
 # get dynamics, set up step cost and terminal cost
-uav_params = {'gravity': 10, 'm': 0.01, 'J_B': 0.01 * np.eye(3), 'l_w': 0.75, 'dt': 0.1, 'c': 1}
+uav_params = {'gravity': 10, 'm': 0.01, 'J_B': 0.01 * np.eye(3), 'l_w': 0.75, 'dt': 0.07, 'c': 1}
 uav_env = UAV_env(**uav_params)
 uav_model = UAV_model(**uav_params)
 dyn_f = uav_model.get_dyn_f()
 ######################################################################################
 
-
-######################################################################################
-visualizer = uav_visualizer(uav_env, [0, 0, 0], [10, 10, 10],mode='wall')
-visualizer.render_init()
-######################################################################################
-
-
 # r,v,q,w,u
 step_cost_vec = np.array([0.1, 50, 1, 1, 0.01]) * 1e-1
-step_cost_f = uav_model.get_step_cost(step_cost_vec, target_pos=np.array([9, 9, 5]))
+step_cost_f = uav_model.get_step_cost(step_cost_vec, target_pos=np.array([19, 9, 5]))
 term_cost_vec = np.array([10, 6, 1, 50]) * 1e0
-term_cost_f = uav_model.get_terminal_cost(term_cost_vec, target_pos=np.array([9, 9, 5]))
+term_cost_f = uav_model.get_terminal_cost(term_cost_vec, target_pos=np.array([19, 9, 5]))
 
 #########################################################################################
 controller = ocsolver_v2('uav control')
@@ -85,6 +79,10 @@ controller.construct_prob(horizon=Horizon)
 init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 ######################################################################################
 
+######################################################################################
+visualizer = uav_visualizer(uav_env, [0, 0, 0], [20, 10, 10],mode='wall',controller=controller)
+visualizer.render_init()
+######################################################################################
 
 #########################################################################################
 #  cutter

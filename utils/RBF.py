@@ -32,7 +32,7 @@ def generate_phi_rbf(Horizon=20,X_c=np.linspace(3, 7, 5),Y_c=np.linspace(3, 7, 5
         for center in centers:
             print(center)
             phi_i = gau_rbf_xy(x_pos, y_pos, center[0], center[1], epsilon)
-            phi_list.append(-phi_i)
+            phi_list.append(phi_i)
 
         phi = cd.vertcat(*phi_list)
         return cd.Function('phi', [traj], [phi])
@@ -45,7 +45,7 @@ def generate_phi_rbf(Horizon=20,X_c=np.linspace(3, 7, 5),Y_c=np.linspace(3, 7, 5
         for center in centers:
             print(center)
             phi_i = IM_rbf_xy(x_pos, y_pos, center[0], center[1], epsilon)
-            phi_list.append(-phi_i)
+            phi_list.append(phi_i)
 
         phi = cd.vertcat(*phi_list)
         return cd.Function('phi', [traj], [phi])
@@ -61,7 +61,30 @@ def generate_phi_rbf(Horizon=20,X_c=np.linspace(3, 7, 5),Y_c=np.linspace(3, 7, 5
         for center in centers:
             print(center)
             phi_i = gau_rbf_xyz(x_pos, y_pos, z_pos, center[0], center[1], center[2], epsilon)
-            phi_list.append(-phi_i)
+            phi_list.append(phi_i)
+
+        phi = cd.vertcat(*phi_list)
+        return cd.Function('phi', [traj], [phi])
+    
+    if mode=='gau_rbf_xyz_cum':
+        grid_x, grid_y, grid_z = np.meshgrid(X_c, Y_c ,Z_c, indexing='ij')
+        grid_x = grid_x.reshape(-1, 1)
+        grid_y = grid_y.reshape(-1, 1)
+        grid_z = grid_z.reshape(-1, 1)
+        #print(Z_c)
+        #print(grid_z)
+        centers = np.concatenate([grid_x, grid_y, grid_z], axis=1)
+        for center in centers:
+            print(center)
+            phi_i=0
+            disc=1
+            for i in range(3):
+                x_pos_cum = traj[(5+i) * (x_dim + u_dim)]
+                y_pos_cum = traj[(5+i) * (x_dim + u_dim) + 1]
+                z_pos_cum = traj[(5+i) * (x_dim + u_dim) + 2]
+                phi_i += disc * gau_rbf_xyz(x_pos_cum, y_pos_cum, z_pos_cum, center[0], center[1], center[2], epsilon)
+                disc *= 0.5
+            phi_list.append(phi_i)
 
         phi = cd.vertcat(*phi_list)
         return cd.Function('phi', [traj], [phi])

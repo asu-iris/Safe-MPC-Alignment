@@ -4,15 +4,17 @@ import sys,os
 sys.path.append(os.path.abspath(os.path.dirname(os.getcwd())))
 sys.path.append(os.path.abspath(os.getcwd()))
 from Envs.UAV import UAV_env,Quat_Rot
+from Solvers.OCsolver import ocsolver_v2
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class uav_visualizer(object):
-    def __init__(self,env:UAV_env,space_xyzmin,space_xyzmax,mode='cylinder') -> None:
+    def __init__(self,env:UAV_env,space_xyzmin,space_xyzmax,mode='cylinder',controller:ocsolver_v2=None) -> None:
         self.env=env
         self.space_xyzmin=np.array(space_xyzmin)
         self.space_xyzmax=np.array(space_xyzmax)
         self.mode=mode
+        self.controller=controller
 
     def render_init(self):
         if not hasattr(self, 'ax'):
@@ -44,6 +46,16 @@ class uav_visualizer(object):
         if hasattr(self,'wing_1_line'):
             self.clear_uav()
 
+        if hasattr(self,'traj_line'):
+            self.clear_traj()
+
+        self.draw_uav(scale_ratio=scale_ratio)
+
+        if self.controller is not None:
+            self.plot_traj()
+        plt.pause(0.01)
+
+    def draw_uav(self,scale_ratio):
         pos = self.env.curr_x.flatten()[0:3]
         quat = self.env.curr_x.flatten()[6:10]
 
@@ -76,8 +88,6 @@ class uav_visualizer(object):
 
         self.wing_4_point=self.ax.scatter(wing4_tip[0], wing4_tip[1], wing4_tip[2], color='y', marker='o')
         self.wing_4_line,=self.ax.plot((x,wing4_tip[0]),(y, wing4_tip[1]),(z, wing4_tip[2]), color='b')
-
-        plt.pause(0.01)
 
     def clear_uav(self):
         self.wing_1_line.remove()
@@ -127,15 +137,15 @@ class uav_visualizer(object):
         wall_height = 10 #y
         wall_depth = 10 #z
 
-        wall_x=5
+        wall_x=10
         wall_y=0
         # Define cube dimensions
         cube_size = 1.0
 
         # Define hole dimensions
         hole_width = 4
-        hole_height = 3
-        hole_depth = 2
+        hole_height = 4
+        hole_depth = 4
         hole_x = 3
         hole_y = 2
         hole_z = 4
@@ -148,6 +158,21 @@ class uav_visualizer(object):
                     # Exclude cubes inside the hole
                     if not (hole_y <= y < hole_y + hole_height and hole_z <= z < hole_z + hole_depth):
                         self.ax.bar3d(x, y, z, cube_size, cube_size, cube_size, color=wall_color)
+
+    def plot_traj(self, plot_horizon=15):
+        x_dim=13
+        u_dim=4
+        traj_xu=self.controller.opt_traj
+        traj_plot=[]
+        for i in range(plot_horizon):
+            xyz_pos=traj_xu[i*(x_dim+u_dim):i*(x_dim+u_dim)+3]
+            traj_plot.append(xyz_pos)
+        traj_plot=np.array(traj_plot)
+
+        self.traj_line,=self.ax.plot((traj_plot[:,0]),(traj_plot[:,1]),(traj_plot[:,2]), color='r')
+
+    def clear_traj(self):
+        self.traj_line.remove()
 
 
 
