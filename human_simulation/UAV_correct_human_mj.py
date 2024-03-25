@@ -15,10 +15,9 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 from Solvers.Cutter import cutter_v2
 from Solvers.MVEsolver import mvesolver
-from utils.Correction import Correction_Agent, uav_trans
 from utils.RBF import generate_phi_rbf,gen_eval_rbf
 
-from utils.Visualize import uav_visualizer
+from utils.Visualize_mj import uav_visualizer_mj
 from utils.Keyboard import uav_key_handler,key_interface,remove_conflict
 
 # list for msg passing
@@ -37,21 +36,23 @@ radius = 2
 
 # set up safety features
 Horizon = 15  # 25
-Gamma = 10 #10
+Gamma = 5 #10
 
 # rbf_mode='gau_rbf_xyz'
-rbf_mode='gau_rbf_xyz_cum'
+rbf_mode='gau_rbf_sep_cum'
 #rbf_X_c=np.array([2,4,6])
-rbf_X_c=np.array([10.5])
+rbf_X_c=np.array([9.8])
 #rbf_Y_c=np.linspace(2,8,4)
 #rbf_Z_c=np.linspace(2,8,4)
-rbf_Y_c=np.linspace(0,10,4)#5
-rbf_Z_c=np.linspace(0,10,4)#5
-phi_func = generate_phi_rbf(Horizon,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.3,bias=-1,mode=rbf_mode)
+rbf_Y_c=np.linspace(0,10,8)#5
+rbf_Z_c=np.linspace(0,10,12)#5
+phi_func = generate_phi_rbf(Horizon,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.4,bias=-1,mode=rbf_mode)
 
-theta_dim = 16
-hypo_lbs = -20 * np.ones(theta_dim)
-hypo_ubs = 100 * np.ones(theta_dim)
+theta_dim = 20
+hypo_lbs = -80 * np.ones(theta_dim)
+hypo_ubs = 150 * np.ones(theta_dim)
+#hypo_lbs = -30 * np.ones(theta_dim)
+#hypo_ubs = 80 * np.ones(theta_dim)
 
 ######################################################################################
 # get dynamics, set up step cost and terminal cost
@@ -63,9 +64,9 @@ dyn_f = uav_model.get_dyn_f()
 
 # r,v,q,w,u
 step_cost_vec = np.array([0.1, 200, 1, 5, 0.01]) * 1e-2
-step_cost_f = uav_model.get_step_cost(step_cost_vec, target_pos=np.array([19, 9, 5]))
+step_cost_f = uav_model.get_step_cost(step_cost_vec, target_pos=np.array([19, 9, 9]))
 term_cost_vec = np.array([10, 6, 1, 5]) * 1e0
-term_cost_f = uav_model.get_terminal_cost(term_cost_vec, target_pos=np.array([19, 9, 5]))
+term_cost_f = uav_model.get_terminal_cost(term_cost_vec, target_pos=np.array([19, 9, 9]))
 
 #########################################################################################
 controller = ocsolver_v2('uav control')
@@ -80,7 +81,7 @@ init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 ######################################################################################
 
 ######################################################################################
-visualizer = uav_visualizer(uav_env, [0, 0, 0], [20, 10, 10],mode='wall',controller=controller)
+visualizer = uav_visualizer_mj(uav_env,controller=controller)
 visualizer.render_init()
 ######################################################################################
 
@@ -140,18 +141,18 @@ while True:
 
                 # mve_calc.savefig(C,learned_theta,np.array([-5,-5]),dir='D:\\ASU_Work\\Research\\learn safe mpc\\experiment\\results\\cut_figs\\' +str(num_corr)+'.png')
                 num_corr += 1
-                time.sleep(0.05)
+                time.sleep(0.2)
 
             # simulation
             x = uav_env.get_curr_state()
             u = controller.control(x, weights=learned_theta)
             uav_env.step(u)
-            visualizer.render_update(scale_ratio=1.5)
-            time.sleep(0.05)
+            visualizer.render_update()
+            time.sleep(0.1)
 
         else:
             while PAUSE[0]:
-                time.sleep(0.05)
+                time.sleep(0.2)
 
     if MSG[0]=='reset':
         MSG[0]=None

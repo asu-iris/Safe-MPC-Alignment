@@ -144,10 +144,10 @@ class uav_visualizer(object):
 
         # Define hole dimensions
         hole_width = 4
-        hole_height = 5
-        hole_depth = 2
+        hole_height = 4
+        hole_depth = 1
         hole_x = 3
-        hole_y = 2
+        hole_y = 3
         hole_z = 4
 
         wall_color = (0.5, 0.5, 0.5, 0.6)

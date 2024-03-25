@@ -1,14 +1,19 @@
 import numpy as np
 import casadi as cd
 
-def gau_rbf_xy(x,y,x_c:float,y_c:float,epsilon:float):
-    return cd.exp(-epsilon**2 * ((x-x_c)**2 + (y-y_c)**2))
+
 
 def IM_rbf_xy(x,y,x_c:float,y_c:float,epsilon:float):
     return 1/(1 + epsilon**2 * ((x-x_c)**2 + (y-y_c)**2))
 
 def gau_rbf_xyz(x,y,z,x_c:float,y_c:float,z_c:float,epsilon:float):
     return cd.exp(- epsilon**2 * ((x-x_c)**2 + (y-y_c)**2 + (z-z_c)**2))
+
+def gau_rbf_xy(x,y,x_c:float,y_c:float,epsilon:float):
+    return cd.exp(-epsilon**2 * ((x-x_c)**2 + (y-y_c)**2))
+
+def gau_rbf_xz(x,z,x_c:float,z_c:float,epsilon:float):
+    return cd.exp(- epsilon**2 * ((x-x_c)**2 + (z-z_c)**2))
 
 def IM_rbf_xyz(x,y,z,x_c:float,y_c:float,z_c:float,epsilon:float):
     return 1/(1 + epsilon**2 * ((x-x_c)**2 + (y-y_c)**2 + (z-z_c)**2))
@@ -78,14 +83,49 @@ def generate_phi_rbf(Horizon=20,X_c=np.linspace(3, 7, 5),Y_c=np.linspace(3, 7, 5
             print(center)
             phi_i=0
             disc=1
-            for i in range(3):
+            for i in range(10):
                 x_pos_cum = traj[(5+i) * (x_dim + u_dim)]
                 y_pos_cum = traj[(5+i) * (x_dim + u_dim) + 1]
                 z_pos_cum = traj[(5+i) * (x_dim + u_dim) + 2]
                 phi_i += disc * gau_rbf_xyz(x_pos_cum, y_pos_cum, z_pos_cum, center[0], center[1], center[2], epsilon)
-                disc *= 0.5
+                disc *= 0.9
             phi_list.append(phi_i)
 
+        phi = cd.vertcat(*phi_list)
+        return cd.Function('phi', [traj], [phi])
+    
+    if mode=='gau_rbf_sep_cum':
+        grid_x, grid_y = np.meshgrid(X_c, Y_c)
+        grid_x = grid_x.reshape(-1, 1)
+        grid_y = grid_y.reshape(-1, 1)
+        centers = np.concatenate([grid_x, grid_y], axis=1)
+        for center in centers:
+            print(center)
+            phi_i=0
+            disc=1
+            for i in range(10):
+                x_pos_cum = traj[(5+i) * (x_dim + u_dim)]
+                y_pos_cum = traj[(5+i) * (x_dim + u_dim) + 1]
+                z_pos_cum = traj[(5+i) * (x_dim + u_dim) + 2]
+                phi_i += disc * gau_rbf_xy(x_pos_cum, y_pos_cum, center[0], center[1], epsilon)
+                disc *= 0.9
+            phi_list.append(phi_i)
+
+        grid_x, grid_z = np.meshgrid(X_c, Z_c)
+        grid_x = grid_x.reshape(-1, 1)
+        grid_z = grid_z.reshape(-1, 1)
+        centers = np.concatenate([grid_x, grid_z], axis=1)
+        for center in centers:
+            print(center)
+            phi_i=0
+            disc=1
+            for i in range(10):
+                x_pos_cum = traj[(5+i) * (x_dim + u_dim)]
+                y_pos_cum = traj[(5+i) * (x_dim + u_dim) + 1]
+                z_pos_cum = traj[(5+i) * (x_dim + u_dim) + 2]
+                phi_i += disc * gau_rbf_xy(x_pos_cum, z_pos_cum, center[0], center[1], epsilon)
+                disc *= 0.4
+            phi_list.append(phi_i)
         phi = cd.vertcat(*phi_list)
         return cd.Function('phi', [traj], [phi])
 
