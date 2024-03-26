@@ -36,7 +36,7 @@ radius = 2
 
 # set up safety features
 Horizon = 15  # 25
-Gamma = 5 #10
+Gamma = 5  #10
 
 # rbf_mode='gau_rbf_xyz'
 rbf_mode='gau_rbf_sep_cum'
@@ -146,9 +146,10 @@ while True:
             # simulation
             x = uav_env.get_curr_state()
             u = controller.control(x, weights=learned_theta)
-            uav_env.step(u)
             visualizer.render_update()
-            time.sleep(0.1)
+
+            uav_env.step(u)
+            time.sleep(0.05)
 
         else:
             while PAUSE[0]:

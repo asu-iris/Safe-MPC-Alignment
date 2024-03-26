@@ -15,21 +15,54 @@ class uav_visualizer_mj(object):
     def __init__(self,env:UAV_env,controller:ocsolver_v2=None) -> None:
         self.env=env
         self.controller=controller
+        self.mpc_horizon=15
 
     def render_init(self):
         filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'mujoco_uav','bitcraze_crazyflie_2','scene.xml')
         self.m=mujoco.MjModel.from_xml_path(filepath)
         self.d=mujoco.MjData(self.m)
         self.viewer=mujoco.viewer.launch_passive(self.m, self.d)
+        self.scene=self.viewer.user_scn
+        self.scene.ngeom=0
+
+        #initialize MPC trajectory
+        for i in range(self.mpc_horizon-1):
+            self.scene.ngeom+=1
+            mujoco.mjv_initGeom(
+                self.scene.geoms[i],
+                type=mujoco.mjtGeom.mjGEOM_LINE,
+                size=np.zeros(3),
+                pos=np.zeros(3),
+                mat=np.eye(3).flatten(),
+                rgba=0.5*np.array([1, 0, 0.5, 1])
+            )
+
 
     def render_update(self):
         pos=self.env.curr_x[0:3].flatten()
         q=self.env.curr_x[6:10].flatten()
         self.d.qpos[0:3]=pos
         self.d.qpos[3:7]=q
-
+        self.plot_mpc_traj()
         mujoco.mj_forward(self.m, self.d)
         self.viewer.sync()
+
+    def plot_mpc_traj(self):
+        traj_xu=self.controller.opt_traj
+        traj_plot=[]
+        x_dim=13
+        u_dim=4
+        for i in range(self.mpc_horizon):
+            xyz_pos=traj_xu[i*(x_dim+u_dim):i*(x_dim+u_dim)+3]
+            traj_plot.append(xyz_pos)
+        traj_plot=np.array(traj_plot)
+
+        for i in range(self.mpc_horizon-1):
+            mujoco.mjv_makeConnector(self.scene.geoms[i],
+                    mujoco.mjtGeom.mjGEOM_LINE,
+                    10,
+                    traj_plot[i,0],traj_plot[i,1],traj_plot[i,2],
+                    traj_plot[i+1,0],traj_plot[i+1,1],traj_plot[i+1,2])
 
 if __name__=='__main__':
     filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'mujoco_uav','bitcraze_crazyflie_2','scene.xml')
