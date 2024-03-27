@@ -108,7 +108,7 @@ def generate_phi_rbf(Horizon=20,X_c=np.linspace(3, 7, 5),Y_c=np.linspace(3, 7, 5
                 y_pos_cum = traj[(5+i) * (x_dim + u_dim) + 1]
                 z_pos_cum = traj[(5+i) * (x_dim + u_dim) + 2]
                 phi_i += disc * gau_rbf_xy(x_pos_cum, y_pos_cum, center[0], center[1], epsilon)
-                disc *= 0.9
+                disc *= 0.8 #v2 0.9 v1
             phi_list.append(phi_i)
 
         grid_x, grid_z = np.meshgrid(X_c, Z_c)

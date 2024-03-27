@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.getcwd()))
 from utils.Keyboard import uav_key_handler
 import matplotlib.pyplot as plt
 import casadi as cd
-from Envs.UAV import UAV_env, UAV_model
+from Envs.UAV import UAV_env_mj, UAV_model
 from Solvers.OCsolver import ocsolver_v2
 import numpy as np
 from matplotlib import pyplot as plt
@@ -17,8 +17,9 @@ from Solvers.Cutter import cutter_v2
 from Solvers.MVEsolver import mvesolver
 from utils.RBF import generate_phi_rbf,gen_eval_rbf
 
-from utils.Visualize_mj import uav_visualizer_mj
+from utils.Visualize_mj import uav_visualizer_mj_v2
 from utils.Keyboard import uav_key_handler,key_interface,remove_conflict
+import mujoco
 
 def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer):
     global PAUSE,MSG
@@ -78,7 +79,7 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
 
                     # mve_calc.savefig(C,learned_theta,np.array([-5,-5]),dir='D:\\ASU_Work\\Research\\learn safe mpc\\experiment\\results\\cut_figs\\' +str(num_corr)+'.png')
                     num_corr += 1
-                    #time.sleep(0.2)
+                    time.sleep(0.1)
 
                 # simulation
                 x = uav_env.get_curr_state()
@@ -87,14 +88,13 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
                 visualizer.render_update()
 
                 uav_env.step(u)
-                time.sleep(0.05)
+                time.sleep(0.02)
 
             else:
                 while PAUSE[0]:
                     time.sleep(0.2)
 
-
-# list for msg passing
+#list for msg passing
 PAUSE = [False]
 MSG = [None]
 
@@ -108,26 +108,22 @@ listener.start()
 Horizon = 15  # 25
 Gamma = 5  #10
 
-# rbf_mode='gau_rbf_xyz'
+#set up rbf function
 rbf_mode='gau_rbf_sep_cum'
-#rbf_X_c=np.array([2,4,6])
 rbf_X_c=np.array([9.8])
-#rbf_Y_c=np.linspace(2,8,4)
-#rbf_Z_c=np.linspace(2,8,4)
 rbf_Y_c=np.linspace(0,10,8)#5
-rbf_Z_c=np.linspace(0,10,12)#5
-phi_func = generate_phi_rbf(Horizon,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.4,bias=-1,mode=rbf_mode)
+rbf_Z_c=np.linspace(0,10,8)#5
+phi_func = generate_phi_rbf(Horizon,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.45,bias=-1,mode=rbf_mode)
 
-theta_dim = 20
+theta_dim = 16
 hypo_lbs = -80 * np.ones(theta_dim)
-hypo_ubs = 150 * np.ones(theta_dim)
-#hypo_lbs = -30 * np.ones(theta_dim)
-#hypo_ubs = 80 * np.ones(theta_dim)
-
-######################################################################################
+hypo_ubs = 100 * np.ones(theta_dim)
+init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 # get dynamics, set up step cost and terminal cost
-uav_params = {'gravity': 10, 'm': 0.1, 'J_B': 0.01 * np.eye(3), 'l_w': 0.75, 'dt': 0.1, 'c': 1}
-uav_env = UAV_env(**uav_params)
+uav_params = {'gravity': 9.8, 'm': 0.1, 'J_B': 0.01 * np.eye(3), 'l_w': 1.2, 'dt': 0.1, 'c': 1}
+filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'mujoco_uav','bitcraze_crazyflie_2','scene.xml')
+print('path',filepath)
+uav_env = UAV_env_mj(filepath)
 uav_model = UAV_model(**uav_params)
 dyn_f = uav_model.get_dyn_f()
 ######################################################################################
@@ -147,11 +143,11 @@ controller.set_step_cost(step_cost_f)
 controller.set_term_cost(term_cost_f)
 controller.set_g(phi_func, gamma=Gamma)
 controller.construct_prob(horizon=Horizon)
-init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
+#init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 ######################################################################################
 
 ######################################################################################
-visualizer = uav_visualizer_mj(uav_env,controller=controller)
+visualizer = uav_visualizer_mj_v2(uav_env,controller=controller)
 visualizer.render_init()
 ######################################################################################
 
@@ -168,14 +164,26 @@ hb_calculator.construct_graph(horizon=Horizon)
 mve_calc = mvesolver('uav_mve', theta_dim)
 mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)  # Theta_0
 #########################################################################################
-
 flag,cnt=mainloop(learned_theta=learned_theta,
          uav_env=uav_env,
          controller=controller,
          hb_calculator=hb_calculator,
          mve_calc=mve_calc,
          visualizer=visualizer)
-
 print(flag,cnt)
-print('-------------------------------')
 sys.exit()
+init_r = np.array([0, 0, 0]).reshape(-1, 1)
+init_v = np.zeros((3, 1))
+init_q = np.reshape(np.array([1, 0, 0, 0]), (-1, 1))
+# print(Quat_Rot(init_q))
+init_w_B = np.zeros((3, 1))
+init_x = np.concatenate([init_r, init_v, init_q, init_w_B], axis=0)
+uav_env.set_init_state(init_x)
+for i in range(400):
+    x = uav_env.get_curr_state()
+    u = controller.control(x,weights=learned_theta)
+    #print(x[0:3])
+    #print(u)
+    visualizer.render_update()
+    uav_env.step(u)
+    time.sleep(0.1)

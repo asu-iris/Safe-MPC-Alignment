@@ -6,6 +6,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from matplotlib.animation import FuncAnimation
 from scipy.spatial.transform import Rotation as R
+import mujoco
 
 class UAV_env(object):
     def __init__(self,gravity,m,J_B,l_w,dt,c) -> None:
@@ -343,6 +344,51 @@ class UAV_model(object):
         self.c_T= p_vec.T @ l_vec
         return cd.Function('terminal_cost',[self.x_t],[self.c_T])
         
+class UAV_env_mj(object):
+    def __init__(self,xml_path,wing_length=0.8,c=1) -> None:
+        self.model=mujoco.MjModel.from_xml_path(xml_path)
+        self.data=mujoco.MjData(self.model)
+        self.x_traj=[]
+        self.u_traj=[]
+        self.l_w=wing_length
+
+        self.K = np.array([[1,1,1,1],
+                           [0,-self.l_w/2,0,self.l_w/2],
+                           [-self.l_w/2,0,self.l_w/2,0],
+                           [c,-c,c,-c]])
+
+    def set_init_state(self,x:np.ndarray):
+        mujoco.mj_resetData(self.model,self.data)
+        x=x.flatten()
+        self.data.qpos[0:3]=x[0:3] # position
+        self.data.qpos[3:7]=x[6:10] # quaternion
+        self.data.qvel[0:3]=x[3:6] # vel
+        self.data.qvel[3:6]=x[10:] # angular vel
+
+        self.clear_traj()
+
+    def step(self,u):#u:[T1,T2,T3,T4]
+        inner_ctrl= self.K @ u.reshape(-1,1)
+        #rotation=R.from_quat(self.data.qpos[3:7]).as_matrix().T
+        #inner_ctrl[1:]=rotation @ inner_ctrl[1:]
+        self.data.ctrl=inner_ctrl.flatten()
+        #print('ctrl',self.data.ctrl)
+        mujoco.mj_step(self.model, self.data)
+        self.x_traj.append(self.get_curr_state().flatten())
+
+    def get_curr_state(self):
+        x=self.data.qpos[0:3]
+        v=self.data.qvel[0:3]
+        q=self.data.qpos[3:7]
+        #q=R.from_quat(q).inv().as_quat()
+        w=self.data.qvel[3:6]
+
+        return np.concatenate([x,v,q,w]).reshape(-1,1)
+
+    def clear_traj(self):
+        self.x_traj=[]
+        self.u_traj=[]    
+
 
 
 def Quat_Rot(q):

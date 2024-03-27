@@ -28,9 +28,11 @@
 
     <site name="target" size="0.4" type="sphere" pos="19 9 9" rgba="1 0.5 0.5 1"/>
 
-    <geom name="bar_1" size="0.05" type="cylinder" fromto="10 3.5 4 10 3.5 5.5" rgba="0 1 1 1"/>
-    <geom name="bar_2" size="0.05" type="cylinder" fromto="10 3.5 5.5 10 6.5 5.5" rgba="0 1 1 1"/>
-    <geom name="bar_3" size="0.05" type="cylinder" fromto="10 6.5 5.5 10 6.5 4" rgba="0 1 1 1"/>
-    <geom name="bar_4" size="0.05" type="cylinder" fromto="10 6.5 4 10 3.5 4" rgba="0 1 1 1"/>
+    <geom name="bar_1" size="0.05" type="cylinder" fromto="10 3 4 10 3 5" rgba="0 1 1 1"/>
+    <geom name="bar_2" size="0.05" type="cylinder" fromto="10 3 5 10 7 5" rgba="0 1 1 1"/>
+    <geom name="bar_3" size="0.05" type="cylinder" fromto="10 7 5 10 7 4" rgba="0 1 1 1"/>
+    <geom name="bar_4" size="0.05" type="cylinder" fromto="10 7 4 10 3 4" rgba="0 1 1 1"/>
+
+    <geom name="wall" size="0.05 2 2" type="box" pos="8 5 4" rgba="1 0.5 0.5 1"/>
   </worldbody>
 </mujoco>
