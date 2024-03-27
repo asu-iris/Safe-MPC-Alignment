@@ -20,6 +20,78 @@ from utils.RBF import generate_phi_rbf,gen_eval_rbf
 from utils.Visualize_mj import uav_visualizer_mj
 from utils.Keyboard import uav_key_handler,key_interface,remove_conflict
 
+def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer):
+    global PAUSE,MSG
+    num_corr = 0
+    while True:
+
+        print('current theta:', learned_theta)
+
+        init_r = np.array([0, 0, 0]).reshape(-1, 1)
+        init_v = np.zeros((3, 1))
+        init_q = np.reshape(np.array([1, 0, 0, 0]), (-1, 1))
+        # print(Quat_Rot(init_q))
+        init_w_B = np.zeros((3, 1))
+        init_x = np.concatenate([init_r, init_v, init_q, init_w_B], axis=0)
+        #init_x[0] = np.random.uniform(1.0, 7.0)
+        # init_x[0]=1
+        init_x[1] = np.random.uniform(2.0, 3.0)
+        init_x[2] = np.random.uniform(2.0, 3.0)
+        # init_x[1]=1
+        # print('init state', init_x.T)
+
+        uav_env.set_init_state(init_x)
+        for i in range(400):
+            if not PAUSE[0]:
+                if MSG[0]:
+                    # correction
+                    # print('message ',MSG[0])
+                    if MSG[0] == 'quit':
+                        MSG[0] = None
+                        visualizer.close_window()
+                        return True,num_corr
+                    
+                    if MSG[0] == 'fail':
+                        MSG[0] = None
+                        visualizer.close_window()
+                        return False,num_corr
+                    
+                    if MSG[0] == 'reset':
+                        MSG[0] = None
+                        break
+                    human_corr=key_interface(MSG)
+                    MSG[0] = None
+
+                    print('correction', human_corr)
+                    human_corr_e = np.concatenate([human_corr.reshape(-1, 1), np.zeros((4 * (Horizon - 1), 1))])
+                    h, b, h_phi, b_phi = hb_calculator.calc_planes(learned_theta, x, controller.opt_traj, human_corr=human_corr_e)
+
+                    mve_calc.add_constraint(h, b[0])
+                    mve_calc.add_constraint(h_phi, b_phi[0])
+                    try:
+                        learned_theta, C = mve_calc.solve()
+                    except:
+                        return False,num_corr
+                    
+                    print('vol', np.log(np.linalg.det(C)))
+
+                    # mve_calc.savefig(C,learned_theta,np.array([-5,-5]),dir='D:\\ASU_Work\\Research\\learn safe mpc\\experiment\\results\\cut_figs\\' +str(num_corr)+'.png')
+                    num_corr += 1
+                    #time.sleep(0.2)
+
+                # simulation
+                x = uav_env.get_curr_state()
+                u = controller.control(x, weights=learned_theta)
+                visualizer.render_update()
+
+                uav_env.step(u)
+                time.sleep(0.05)
+
+            else:
+                while PAUSE[0]:
+                    time.sleep(0.2)
+
+
 # list for msg passing
 PAUSE = [False]
 MSG = [None]
@@ -29,10 +101,6 @@ listener = keyboard.Listener(
     on_press=lambda key: uav_key_handler(key, PAUSE, MSG),
     on_release=None)
 listener.start()
-
-
-center = (5, 5, 3)
-radius = 2
 
 # set up safety features
 Horizon = 15  # 25
@@ -98,65 +166,14 @@ hb_calculator.construct_graph(horizon=Horizon)
 mve_calc = mvesolver('uav_mve', theta_dim)
 mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)  # Theta_0
 #########################################################################################
-remove_conflict(plt.rcParams)
-#print(plt.rcParams)
-num_corr = 0
-while True:
 
-    print('current theta:', learned_theta)
+flag,cnt=mainloop(learned_theta=learned_theta,
+         uav_env=uav_env,
+         controller=controller,
+         hb_calculator=hb_calculator,
+         mve_calc=mve_calc,
+         visualizer=visualizer)
 
-    init_r = np.array([0, 0, 0]).reshape(-1, 1)
-    init_v = np.zeros((3, 1))
-    init_q = np.reshape(np.array([1, 0, 0, 0]), (-1, 1))
-    # print(Quat_Rot(init_q))
-    init_w_B = np.zeros((3, 1))
-    init_x = np.concatenate([init_r, init_v, init_q, init_w_B], axis=0)
-    #init_x[0] = np.random.uniform(1.0, 7.0)
-    # init_x[0]=1
-    init_x[1] = np.random.uniform(2.0, 3.0)
-    init_x[2] = np.random.uniform(2.0, 3.0)
-    # init_x[1]=1
-    # print('init state', init_x.T)
-
-    uav_env.set_init_state(init_x)
-    for i in range(400):
-        if not PAUSE[0]:
-            if MSG[0]:
-                # correction
-                # print('message ',MSG[0])
-                human_corr=key_interface(MSG)
-
-                if MSG[0] == 'quit' or MSG[0] == 'reset':
-                    break
-                MSG[0] = None
-
-                print('correction', human_corr)
-                human_corr_e = np.concatenate([human_corr.reshape(-1, 1), np.zeros((4 * (Horizon - 1), 1))])
-                h, b, h_phi, b_phi = hb_calculator.calc_planes(learned_theta, x, controller.opt_traj, human_corr=human_corr_e)
-
-                mve_calc.add_constraint(h, b[0])
-                mve_calc.add_constraint(h_phi, b_phi[0])
-                learned_theta, C = mve_calc.solve()
-                print('vol', np.log(np.linalg.det(C)))
-
-                # mve_calc.savefig(C,learned_theta,np.array([-5,-5]),dir='D:\\ASU_Work\\Research\\learn safe mpc\\experiment\\results\\cut_figs\\' +str(num_corr)+'.png')
-                num_corr += 1
-                time.sleep(0.2)
-
-            # simulation
-            x = uav_env.get_curr_state()
-            u = controller.control(x, weights=learned_theta)
-            visualizer.render_update()
-
-            uav_env.step(u)
-            time.sleep(0.05)
-
-        else:
-            while PAUSE[0]:
-                time.sleep(0.2)
-
-    if MSG[0]=='reset':
-        MSG[0]=None
-
-    if MSG[0]=='quit':
-        break
+print(flag,cnt)
+print('-------------------------------')
+sys.exit()

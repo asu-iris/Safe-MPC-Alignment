@@ -21,6 +21,9 @@ def uav_key_handler(key,pause,msg):
         elif key==keyboard.Key.esc:
             print('satified')
             msg[0]='quit'
+        elif hasattr(key,'char') and key.char=="f":
+            print('user signified failure')
+            msg[0]='fail'
 
         if key==keyboard.Key.up:
         #if key.char == 'w':

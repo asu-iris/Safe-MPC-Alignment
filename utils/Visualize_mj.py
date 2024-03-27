@@ -45,6 +45,7 @@ class uav_visualizer_mj(object):
         self.d.qpos[3:7]=q
         self.plot_mpc_traj()
         mujoco.mj_forward(self.m, self.d)
+        #mujoco.mj_step(self.m, self.d)
         self.viewer.sync()
 
     def plot_mpc_traj(self):
@@ -63,6 +64,10 @@ class uav_visualizer_mj(object):
                     10,
                     traj_plot[i,0],traj_plot[i,1],traj_plot[i,2],
                     traj_plot[i+1,0],traj_plot[i+1,1],traj_plot[i+1,2])
+    
+    def close_window(self):
+        self.viewer.close()
+        print('window closed')
 
 if __name__=='__main__':
     filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'mujoco_uav','bitcraze_crazyflie_2','scene.xml')
