@@ -36,8 +36,8 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
         init_x = np.concatenate([init_r, init_v, init_q, init_w_B], axis=0)
         #init_x[0] = np.random.uniform(1.0, 7.0)
         # init_x[0]=1
-        init_x[1] = np.random.uniform(2.0, 3.0)
-        init_x[2] = np.random.uniform(2.0, 3.0)
+        init_x[1] = np.random.uniform(0.0, 4.0)
+        init_x[2] = np.random.uniform(0.3, 2.0)
         # init_x[1]=1
         # print('init state', init_x.T)
 
@@ -79,7 +79,7 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
 
                     # mve_calc.savefig(C,learned_theta,np.array([-5,-5]),dir='D:\\ASU_Work\\Research\\learn safe mpc\\experiment\\results\\cut_figs\\' +str(num_corr)+'.png')
                     num_corr += 1
-                    time.sleep(0.1)
+                    time.sleep(0.05)
 
                 # simulation
                 x = uav_env.get_curr_state()
@@ -88,7 +88,7 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
                 visualizer.render_update()
 
                 uav_env.step(u)
-                time.sleep(0.02)
+                time.sleep(0.05)
 
             else:
                 while PAUSE[0]:
@@ -111,11 +111,11 @@ Gamma = 5  #10
 #set up rbf function
 rbf_mode='gau_rbf_sep_cum'
 rbf_X_c=np.array([9.8])
-rbf_Y_c=np.linspace(0,10,8)#5
-rbf_Z_c=np.linspace(0,10,8)#5
+rbf_Y_c=np.linspace(0,10,12)#5
+rbf_Z_c=np.linspace(0,10,12)#5
 phi_func = generate_phi_rbf(Horizon,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.45,bias=-1,mode=rbf_mode)
 
-theta_dim = 16
+theta_dim = 24
 hypo_lbs = -80 * np.ones(theta_dim)
 hypo_ubs = 100 * np.ones(theta_dim)
 init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
