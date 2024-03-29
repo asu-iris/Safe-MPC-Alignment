@@ -58,7 +58,7 @@ class UAV_env(object):
         d_q = 0.5 * np.array(Omega(self.w_B.flatten())) @ self.q_BI
 
         d_w_B = np.linalg.inv(self.J_B) @ (
-                    self.K_tau @ u - np.reshape(np.cross(self.w_B.flatten(), (self.J_B @ self.w_B).flatten()), (-1, 1)))
+                self.K_tau @ u - np.reshape(np.cross(self.w_B.flatten(), (self.J_B @ self.w_B).flatten()), (-1, 1)))
         self.r_I += self.dt * d_r_I
         self.v_I += self.dt * d_v_I
         self.q_BI += self.dt * d_q
@@ -325,7 +325,9 @@ class UAV_model(object):
         self.u = cd.SX.sym('u_t', 4)
 
         p_vec = cd.DM(param_vec)
-        l_vec = cd.vertcat(cd.sumsqr(self.r_I - target_r), cd.sumsqr(self.v_I - target_v), q_dist(self.q_BI, target_q), \
+        w_r = cd.diag([0.5, 1, 1])
+        l_vec = cd.vertcat(cd.sumsqr(w_r @ (self.r_I - target_r)), cd.sumsqr(self.v_I - target_v),
+                           q_dist(self.q_BI, target_q), \
                            cd.sumsqr(self.w_B - target_w), cd.sumsqr(self.u))
         self.c = p_vec.T @ l_vec
         return cd.Function('step_cost', [self.x_t, self.u], [self.c])

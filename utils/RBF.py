@@ -124,7 +124,7 @@ def generate_phi_rbf(Horizon=20,X_c=np.linspace(3, 7, 5),Y_c=np.linspace(3, 7, 5
                 y_pos_cum = traj[(5+i) * (x_dim + u_dim) + 1]
                 z_pos_cum = traj[(5+i) * (x_dim + u_dim) + 2]
                 phi_i += disc * gau_rbf_xy(x_pos_cum, z_pos_cum, center[0], center[1], epsilon)
-                disc *= 0.4
+                disc *= 0.8
             phi_list.append(phi_i)
         phi = cd.vertcat(*phi_list)
         return cd.Function('phi', [traj], [phi])
