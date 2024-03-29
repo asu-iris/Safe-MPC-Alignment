@@ -36,7 +36,7 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
         init_x = np.concatenate([init_r, init_v, init_q, init_w_B], axis=0)
         #init_x[0] = np.random.uniform(1.0, 7.0)
         # init_x[0]=1
-        init_x[1] = np.random.uniform(0.0, 4.0)
+        init_x[1] = np.random.uniform(2.0, 4.0)
         init_x[2] = np.random.uniform(0.3, 2.0)
         # init_x[1]=1
         # print('init state', init_x.T)
