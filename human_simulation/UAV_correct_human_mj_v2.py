@@ -36,8 +36,8 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
         init_x = np.concatenate([init_r, init_v, init_q, init_w_B], axis=0)
         #init_x[0] = np.random.uniform(1.0, 7.0)
         # init_x[0]=1
-        init_x[1] = np.random.uniform(2.0, 4.0)
-        init_x[2] = np.random.uniform(0.3, 2.0)
+        # init_x[1] = np.random.uniform(2.0, 4.0)
+        # init_x[2] = np.random.uniform(0.3, 2.0)
         # init_x[1]=1
         # print('init state', init_x.T)
 
@@ -129,7 +129,7 @@ dyn_f = uav_model.get_dyn_f()
 ######################################################################################
 
 # r,v,q,w,u
-step_cost_vec = np.array([0.1, 200, 1, 5, 0.01]) * 1e-2
+step_cost_vec = np.array([0.0, 200, 1, 5, 0.01]) * 1e-2
 step_cost_f = uav_model.get_step_cost(step_cost_vec, target_pos=np.array([19, 9, 9]))
 term_cost_vec = np.array([10, 6, 1, 5]) * 1e0
 term_cost_f = uav_model.get_terminal_cost(term_cost_vec, target_pos=np.array([19, 9, 9]))
