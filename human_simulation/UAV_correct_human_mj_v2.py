@@ -38,7 +38,7 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
         # init_x[0]=1
         # init_x[1] = np.random.uniform(2.0, 4.0)
         # init_x[2] = np.random.uniform(0.3, 2.0)
-        # init_x[1]=1
+        init_x[1]=4
         # print('init state', init_x.T)
 
         uav_env.set_init_state(init_x)
@@ -110,7 +110,7 @@ Gamma = 5  #10
 
 #set up rbf function
 rbf_mode='gau_rbf_sep_cum'
-rbf_X_c=np.array([9.8])
+rbf_X_c=np.array([9.5])
 rbf_Y_c=np.linspace(0,10,12)#5
 rbf_Z_c=np.linspace(0,10,12)#5
 phi_func = generate_phi_rbf(Horizon,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.45,bias=-1,mode=rbf_mode)
@@ -119,6 +119,7 @@ theta_dim = 24
 hypo_lbs = -80 * np.ones(theta_dim)
 hypo_ubs = 100 * np.ones(theta_dim)
 init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
+#init_theta = learned_theta = np.zeros(24)
 # get dynamics, set up step cost and terminal cost
 uav_params = {'gravity': 9.8, 'm': 0.1, 'J_B': 0.01 * np.eye(3), 'l_w': 1.2, 'dt': 0.1, 'c': 1}
 filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'mujoco_uav','bitcraze_crazyflie_2','scene.xml')
@@ -129,7 +130,7 @@ dyn_f = uav_model.get_dyn_f()
 ######################################################################################
 
 # r,v,q,w,u
-step_cost_vec = np.array([0.0, 200, 1, 5, 0.01]) * 1e-2
+step_cost_vec = np.array([0.05, 200, 1, 5, 0.01]) * 1e-2
 step_cost_f = uav_model.get_step_cost(step_cost_vec, target_pos=np.array([19, 9, 9]))
 term_cost_vec = np.array([10, 6, 1, 5]) * 1e0
 term_cost_f = uav_model.get_terminal_cost(term_cost_vec, target_pos=np.array([19, 9, 9]))

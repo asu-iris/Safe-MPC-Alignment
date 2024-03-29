@@ -343,7 +343,7 @@ class UAV_model(object):
         self.w_B = self.x_t[10:]
 
         p_vec = cd.DM(param_vec)
-        weight_mat_r = cd.diag([1, 1, 0.5])
+        weight_mat_r = cd.diag([1, 1, 1])
         l_vec = cd.vertcat(cd.sumsqr(weight_mat_r @ (self.r_I - target_r)), cd.sumsqr(self.v_I - target_v),
                            q_dist(self.q_BI, target_q), \
                            cd.sumsqr(self.w_B - target_w))
