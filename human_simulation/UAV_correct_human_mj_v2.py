@@ -106,16 +106,16 @@ listener.start()
 
 # set up safety features
 Horizon = 15  # 25
-Gamma = 10  #10
+Gamma = 50  #10
 
 #set up rbf function
 rbf_mode='gau_rbf_sep_cum'
 rbf_X_c=np.array([9.8])
-rbf_Y_c=np.linspace(0,10,12)#5
-rbf_Z_c=np.linspace(0,10,12)#5
+rbf_Y_c=np.linspace(0,10,10)#5
+rbf_Z_c=np.linspace(0,10,10)#5
 phi_func = generate_phi_rbf(Horizon,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.45,bias=-1,mode=rbf_mode)
 
-theta_dim = 24
+theta_dim = 20
 hypo_lbs = -80 * np.ones(theta_dim)
 hypo_ubs = 100 * np.ones(theta_dim)
 init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
@@ -131,9 +131,9 @@ dyn_f = uav_model.get_dyn_f()
 
 # r,v,q,w,u
 step_cost_vec = np.array([0.05, 200, 1, 5, 0.01]) * 1e-2
-step_cost_f = uav_model.get_step_cost(step_cost_vec, target_pos=np.array([19, 9, 9]))
+step_cost_f = uav_model.get_step_cost(step_cost_vec, target_pos=np.array([19, 0, 9]))
 term_cost_vec = np.array([10, 6, 1, 5]) * 1e0
-term_cost_f = uav_model.get_terminal_cost(term_cost_vec, target_pos=np.array([19, 9, 9]))
+term_cost_f = uav_model.get_terminal_cost(term_cost_vec, target_pos=np.array([19, 0, 9]))
 
 #########################################################################################
 controller = ocsolver_v2('uav control')

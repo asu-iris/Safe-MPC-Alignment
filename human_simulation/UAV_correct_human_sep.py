@@ -37,7 +37,7 @@ radius = 2
 
 # set up safety features
 Horizon = 15  # 25
-Gamma = 5 #10
+Gamma = 1 #10
 
 # rbf_mode='gau_rbf_xyz'
 rbf_mode='gau_rbf_sep_cum'
@@ -45,8 +45,8 @@ rbf_mode='gau_rbf_sep_cum'
 rbf_X_c=np.array([9.8])
 #rbf_Y_c=np.linspace(2,8,4)
 #rbf_Z_c=np.linspace(2,8,4)
-rbf_Y_c=np.linspace(0,10,8)#5
-rbf_Z_c=np.linspace(0,10,12)#5
+rbf_Y_c=np.linspace(0,10,10)#5
+rbf_Z_c=np.linspace(0,10,10)#5
 phi_func = generate_phi_rbf(Horizon,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.4,bias=-1,mode=rbf_mode)
 
 theta_dim = 20
