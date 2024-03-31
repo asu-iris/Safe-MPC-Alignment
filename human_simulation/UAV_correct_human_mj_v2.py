@@ -19,9 +19,10 @@ from utils.RBF import generate_phi_rbf,gen_eval_rbf
 
 from utils.Visualize_mj import uav_visualizer_mj_v2
 from utils.Keyboard import uav_key_handler,key_interface,remove_conflict
+from utils.user_study_logger import UserLogger
 import mujoco
 
-def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer):
+def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer,logger=None):
     global PAUSE,MSG
     num_corr = 0
     while True:
@@ -43,6 +44,8 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
 
         uav_env.set_init_state(init_x)
         controller.reset_warmstart()
+
+        correction_flag=False
         for i in range(400):
             if not PAUSE[0]:
                 if MSG[0]:
@@ -62,6 +65,7 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
                         MSG[0] = None
                         break
                     human_corr=key_interface(MSG)
+                    human_corr_str=MSG[0]
                     MSG[0] = None
 
                     print('correction', human_corr)
@@ -79,8 +83,11 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer)
 
                     # mve_calc.savefig(C,learned_theta,np.array([-5,-5]),dir='D:\\ASU_Work\\Research\\learn safe mpc\\experiment\\results\\cut_figs\\' +str(num_corr)+'.png')
                     num_corr += 1
+                    correction_flag=True
+                    logger.log_correction(human_corr_str)
                     time.sleep(0.05)
-
+                #TODO: Recording
+                correction_flag=False
                 # simulation
                 x = uav_env.get_curr_state()
                 #print(x.flatten())
@@ -165,26 +172,18 @@ hb_calculator.construct_graph(horizon=Horizon)
 mve_calc = mvesolver('uav_mve', theta_dim)
 mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)  # Theta_0
 #########################################################################################
+
+#########################################################################################
+#logger
+logger=UserLogger()
+#########################################################################################
 flag,cnt=mainloop(learned_theta=learned_theta,
          uav_env=uav_env,
          controller=controller,
          hb_calculator=hb_calculator,
          mve_calc=mve_calc,
-         visualizer=visualizer)
+         visualizer=visualizer,
+         logger=logger)
 print(flag,cnt)
+logger.log_termination(flag,cnt)
 sys.exit()
-init_r = np.array([0, 0, 0]).reshape(-1, 1)
-init_v = np.zeros((3, 1))
-init_q = np.reshape(np.array([1, 0, 0, 0]), (-1, 1))
-# print(Quat_Rot(init_q))
-init_w_B = np.zeros((3, 1))
-init_x = np.concatenate([init_r, init_v, init_q, init_w_B], axis=0)
-uav_env.set_init_state(init_x)
-for i in range(400):
-    x = uav_env.get_curr_state()
-    u = controller.control(x,weights=learned_theta)
-    #print(x[0:3])
-    #print(u)
-    visualizer.render_update()
-    uav_env.step(u)
-    time.sleep(0.1)
