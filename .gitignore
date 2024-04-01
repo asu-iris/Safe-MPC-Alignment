@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 MUJOCO_LOG.TXT
 *.txt
+Data/
