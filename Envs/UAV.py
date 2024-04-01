@@ -7,6 +7,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from matplotlib.animation import FuncAnimation
 from scipy.spatial.transform import Rotation as R
 import mujoco
+import threading
 
 
 class UAV_env(object):
@@ -354,7 +355,7 @@ class UAV_model(object):
 
 
 class UAV_env_mj(object):
-    def __init__(self, xml_path, wing_length=0.8, c=1) -> None:
+    def __init__(self, xml_path, wing_length=0.8, c=1, lock_flag=False) -> None:
         self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
         self.x_traj = []
@@ -365,24 +366,37 @@ class UAV_env_mj(object):
                            [0, -self.l_w / 2, 0, self.l_w / 2],
                            [-self.l_w / 2, 0, self.l_w / 2, 0],
                            [c, -c, c, -c]])
+        
+        # for multi-thread recording
+        self.lock_flag=lock_flag
+        self.mj_lock=None
+        if self.lock_flag:
+            self.mj_lock=threading.Lock()
 
     def set_init_state(self, x: np.ndarray):
+        if self.lock_flag:
+            self.mj_lock.acquire()
         mujoco.mj_resetData(self.model, self.data)
         x = x.flatten()
         self.data.qpos[0:3] = x[0:3]  # position
         self.data.qpos[3:7] = x[6:10]  # quaternion
         self.data.qvel[0:3] = x[3:6]  # vel
         self.data.qvel[3:6] = x[10:]  # angular vel
-
+        if self.lock_flag:
+            self.mj_lock.release()
         self.clear_traj()
 
     def step(self, u):  # u:[T1,T2,T3,T4]
         inner_ctrl = self.K @ u.reshape(-1, 1)
         # rotation=R.from_quat(self.data.qpos[3:7]).as_matrix().T
         # inner_ctrl[1:]=rotation @ inner_ctrl[1:]
+        if self.lock_flag:
+            self.mj_lock.acquire()
         self.data.ctrl = inner_ctrl.flatten()
         # print('ctrl',self.data.ctrl)
         mujoco.mj_step(self.model, self.data)
+        if self.lock_flag:
+            self.mj_lock.release()
         self.x_traj.append(self.get_curr_state().flatten())
 
     def get_curr_state(self):

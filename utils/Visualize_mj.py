@@ -76,7 +76,13 @@ class uav_visualizer_mj_v2(object):
         self.mpc_horizon=15
 
     def render_init(self):
+        cam=self.env.model.cam('track_cf2')
+        #print(type(cam))
+        #input()
         self.viewer=mujoco.viewer.launch_passive(self.env.model, self.env.data)
+        self.viewer.cam.type=mujoco.mjtCamera.mjCAMERA_FIXED
+        self.viewer.cam.fixedcamid=cam.id
+
         self.scene=self.viewer.user_scn
         self.scene.ngeom=0
 

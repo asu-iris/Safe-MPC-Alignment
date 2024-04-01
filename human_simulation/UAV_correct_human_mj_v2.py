@@ -131,7 +131,7 @@ init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 uav_params = {'gravity': 9.8, 'm': 0.1, 'J_B': 0.01 * np.eye(3), 'l_w': 1.2, 'dt': 0.1, 'c': 1}
 filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'mujoco_uav','bitcraze_crazyflie_2','scene.xml')
 print('path',filepath)
-uav_env = UAV_env_mj(filepath)
+uav_env = UAV_env_mj(filepath,lock_flag=True)
 uav_model = UAV_model(**uav_params)
 dyn_f = uav_model.get_dyn_f()
 ######################################################################################
