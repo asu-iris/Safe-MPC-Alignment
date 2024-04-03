@@ -332,6 +332,29 @@ class UAV_model(object):
                            cd.sumsqr(self.w_B - target_w), cd.sumsqr(self.u))
         self.c = p_vec.T @ l_vec
         return cd.Function('step_cost', [self.x_t, self.u], [self.c])
+    
+    def get_step_cost_param(self, param_vec: np.ndarray):
+        target_r = cd.SX.sym('target_r', 3)
+        target_v = cd.DM(np.zeros(3))  # target v is [0,0,0]
+        target_q = cd.DM(np.array([1, 0, 0, 0]))  # target q is the same as world frame
+        target_w = cd.DM(np.zeros(3))  # target w is [0,0,0]
+
+        self.x_t = cd.SX.sym('x_t', 13)
+        self.r_I = self.x_t[0:3]
+        self.v_I = self.x_t[3:6]
+        self.q_BI = self.x_t[6:10]  # from body to the world!
+        self.w_B = self.x_t[10:]
+
+        self.u = cd.SX.sym('u_t', 4)
+
+        p_vec = cd.DM(param_vec)
+        w_r = cd.diag([1, 1, 1.0])
+        l_vec = cd.vertcat(cd.sumsqr(w_r @ (self.r_I - target_r)), cd.sumsqr(self.v_I - target_v),
+                           q_dist(self.q_BI, target_q), \
+                           cd.sumsqr(self.w_B - target_w), cd.sumsqr(self.u))
+        self.c = p_vec.T @ l_vec
+        return cd.Function('step_cost', [self.x_t, self.u, target_r], [self.c])
+
 
     def get_terminal_cost(self, param_vec: np.ndarray, target_pos=7 * np.ones(3)):
         target_r = cd.DM(target_pos)  # target pos is [5,5,5]
@@ -352,7 +375,26 @@ class UAV_model(object):
                            cd.sumsqr(self.w_B - target_w))
         self.c_T = p_vec.T @ l_vec
         return cd.Function('terminal_cost', [self.x_t], [self.c_T])
+    
+    def get_terminal_cost_param(self, param_vec: np.ndarray):
+        target_r = cd.SX.sym('target_r', 3)
+        target_v = cd.DM(np.zeros(3))  # target v is [0,0,0]
+        target_q = cd.DM(np.array([1, 0, 0, 0]))  # target q is the same as world frame
+        target_w = cd.DM(np.zeros(3))  # target w is [0,0,0]
 
+        self.x_t = cd.SX.sym('x_t', 13)
+        self.r_I = self.x_t[0:3]
+        self.v_I = self.x_t[3:6]
+        self.q_BI = self.x_t[6:10]  # from body to the world!
+        self.w_B = self.x_t[10:]
+
+        p_vec = cd.DM(param_vec)
+        weight_mat_r = cd.diag([1, 1, 1])
+        l_vec = cd.vertcat(cd.sumsqr(weight_mat_r @ (self.r_I - target_r)), cd.sumsqr(self.v_I - target_v),
+                           q_dist(self.q_BI, target_q), \
+                           cd.sumsqr(self.w_B - target_w))
+        self.c_T = p_vec.T @ l_vec
+        return cd.Function('terminal_cost', [self.x_t, target_r], [self.c_T])
 
 class UAV_env_mj(object):
     def __init__(self, xml_path, wing_length=0.8, c=1, lock_flag=False) -> None:
