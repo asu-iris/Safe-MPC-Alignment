@@ -17,7 +17,7 @@ from Solvers.Cutter import  cutter_v3
 from Solvers.MVEsolver import mvesolver
 from utils.RBF import generate_phi_rbf, gen_eval_rbf
 
-from utils.Visualize_mj import uav_visualizer_mj_v2
+from utils.Visualize_mj import uav_visualizer_mj_v3
 from utils.Keyboard import uav_key_handler, key_interface, remove_conflict
 from utils.user_study_logger import UserLogger
 from utils.recorder import Recorder_sync
@@ -51,6 +51,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
         target_idx+=1
         target_idx%=3
         print('target_r', target_r)
+        visualizer.set_target_pos(target_r)
 
         uav_env.set_init_state(init_x)
         controller.reset_warmstart()
@@ -152,7 +153,7 @@ init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 uav_params = {'gravity': 9.8, 'm': 0.1, 'J_B': 0.01 * np.eye(3), 'l_w': 1.2, 'dt': 0.1, 'c': 1}
 filepath = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                         'mujoco_uav', 'bitcraze_crazyflie_2',
-                        'scene.xml')
+                        'scene_rand.xml')
 print('path', filepath)
 uav_env = UAV_env_mj(filepath, lock_flag=True)
 uav_model = UAV_model(**uav_params)
@@ -178,7 +179,7 @@ controller.construct_prob(horizon=Horizon)
 ######################################################################################
 
 ######################################################################################
-visualizer = uav_visualizer_mj_v2(uav_env, controller=controller)
+visualizer = uav_visualizer_mj_v3(uav_env, controller=controller)
 visualizer.render_init()
 ######################################################################################
 
