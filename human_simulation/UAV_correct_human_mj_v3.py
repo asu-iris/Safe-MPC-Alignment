@@ -75,7 +75,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
 
                     if MSG[0] == 'reset':
                         MSG[0] = None
-                        recorder.record(True, 'reset')
+                        #recorder.record(True, 'reset')
                         break
                     human_corr = key_interface(MSG)
                     human_corr_str = MSG[0]
@@ -108,7 +108,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                 u = controller.control(x, weights=learned_theta, target_r=target_r)
 
                 # recording
-                recorder.record(correction_flag, human_corr_str)
+                #recorder.record(correction_flag, human_corr_str)
                 correction_flag = False
                 human_corr_str = None
 

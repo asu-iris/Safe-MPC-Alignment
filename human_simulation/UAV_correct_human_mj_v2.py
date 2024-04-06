@@ -189,7 +189,7 @@ logger=UserLogger()
 
 #########################################################################################
 #recorder
-recorder=Recorder_sync(env=uav_env,controller=controller)
+recorder=Recorder_sync(env=uav_env,controller=controller,cam_flag=True)
 #########################################################################################
 flag,cnt=mainloop(learned_theta=learned_theta,
          uav_env=uav_env,

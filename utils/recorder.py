@@ -14,7 +14,8 @@ import cv2
 
 class Recorder_sync(object):
     def __init__(self,env:UAV_env_mj,controller:ocsolver_v2=None,height=480,width=640, 
-                 filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test')) -> None:
+                 filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test'),
+                 cam_flag=False) -> None:
         self.env=env
         self.controller=controller
         self.mpc_horizon=15
@@ -31,6 +32,17 @@ class Recorder_sync(object):
         self.frames=[]
         self.timestamps=[]
         self.corrections=[]
+
+        self.cam_frames=None
+        self.cap=None
+
+        self.cam_flag=cam_flag
+        if self.cam_flag:
+            self.cap=cv2.VideoCapture(0)
+            ret, img = self.cap.read()
+            print(img.shape)
+            #input()
+            self.cam_frames=[]
 
         #initialize MPC trajectory
         #print(self.scene.ngeom)
@@ -70,17 +82,28 @@ class Recorder_sync(object):
             self.plot_mpc_traj()
         #print(self.scene.ngeom)
         #input()
+        #webcam
+        if self.cam_flag:
+            ret, img = self.cap.read()
+            scale_percent=60
+            width=int(img.shape[1]*scale_percent/100)
+            height=int(img.shape[0]*scale_percent/100)
+            img_new=cv2.resize(img, (width,height),)
+            self.cam_frames.append(img)
+        
+        # mj frames
         frame=self.renderer.render()
         self.frames.append(frame)
         dt=datetime.datetime.now()
         dt_str=dt.strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
         self.timestamps.append(dt_str)
-
+        # corrections
         if corr_flag==False:
             self.corrections.append(None)
         
         else:
             self.corrections.append(correction)
+        
 
 
     def write(self):
@@ -96,6 +119,11 @@ class Recorder_sync(object):
             print(str(i),self.timestamps[i], str(self.corrections[i]),file=f)
             frame_filename=os.path.join(self.filepath,'mj_'+str(i)+'.jpg')
             cv2.imwrite(frame_filename,cv2.cvtColor(self.frames[i],cv2.COLOR_RGB2BGR))
+
+        if self.cam_flag:
+            for i in range(n_frames):
+                frame_filename=os.path.join(self.filepath,'cam_'+str(i)+'.jpg')
+                cv2.imwrite(frame_filename,self.cam_frames[i])
         f.close()
 
 
