@@ -97,13 +97,14 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer,
 
                 #visualization
                 visualizer.render_update()
-
-                uav_env.step(u)
-
-                #recording
-                recorder.record(correction_flag,human_corr_str)
+                recorder.record_mj(correction_flag,human_corr_str)
                 correction_flag=False
                 human_corr_str=None
+                
+                uav_env.step(u)
+                #recording
+                recorder.record_cam()
+
 
                 time.sleep(0.05)
 
@@ -190,7 +191,7 @@ logger=UserLogger()
 
 #########################################################################################
 #recorder
-recorder=Recorder_sync(env=uav_env,controller=controller,cam_flag=False)
+recorder=Recorder_sync(env=uav_env,controller=controller,cam_flag=True)
 #########################################################################################
 flag,cnt,weights=mainloop(learned_theta=learned_theta,
          uav_env=uav_env,
@@ -202,5 +203,5 @@ flag,cnt,weights=mainloop(learned_theta=learned_theta,
          recorder=recorder)
 print(flag,cnt,weights)
 logger.log_termination(flag,cnt,weights)
-#recorder.write()
+recorder.write()
 sys.exit()

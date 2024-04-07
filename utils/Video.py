@@ -21,12 +21,12 @@ class VideoMaker(object):
         frames=[None]
         for i in range(1,n_imgs):
             filename=os.path.join(self.path,'mj_'+str(i)+'.jpg')
-            # if corrs[i-1] != 'reset':
-            #     frames.append(cv2.imread(filename))
+            if corrs[i-1] != 'reset':
+                frames.append(cv2.imread(filename))
             
-            # else:
-            #     frames.append(None)
-            frames.append(cv2.imread(filename))
+            else:
+                frames.append(None)
+            #frames.append(cv2.imread(filename))
         print('valid frames mj', sum(x is not None for x in frames))
         video=cv2.VideoWriter(os.path.join(self.path,'demo.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
         text_cnt=0
@@ -62,9 +62,11 @@ class VideoMaker(object):
             
             # else:
             #     frames_hand.append(None)
+            frames_hand.append(cv2.imread(filename))
         print('valid frames cam', sum(x is not None for x in frames))
         video=cv2.VideoWriter(os.path.join(self.path,'hand.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
-        for i in range(n_imgs):
+        for i in range(1,n_imgs):
+            #print(i)
             if frames_hand[i] is None:
                 continue
             video.write(frames_hand[i])
@@ -75,13 +77,13 @@ class VideoMaker(object):
         video=cv2.VideoWriter(os.path.join(self.path,'demo_merge.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
         text_cnt=0
         text=None
-        for i in range(n_imgs):
+        for i in range(1,n_imgs-1):
             if frames[i] is None:
                 continue
 
             img=frames[i]
             #print(img.shape)
-            hand_img=cv2.resize(frames_hand[i],(200,150))
+            hand_img=cv2.resize(frames_hand[i+1],(200,150))
             #print(hand_img.shape)
             img[330:,440:,:]=hand_img
 
@@ -103,7 +105,7 @@ class VideoMaker(object):
 
 if __name__=='__main__':
     path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test')
-    vm=VideoMaker(path,cam_flag=False)
+    vm=VideoMaker(path,cam_flag=True)
     vm.process()
 
 

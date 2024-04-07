@@ -82,6 +82,12 @@ class Recorder_sync(object):
             self.plot_mpc_traj()
         #print(self.scene.ngeom)
         #input()
+        # mj frames
+        frame=self.renderer.render()
+        self.frames.append(frame)
+        dt=datetime.datetime.now()
+        dt_str=dt.strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
+        self.timestamps.append(dt_str)
         #webcam
         if self.cam_flag:
             ret, img = self.cap.read()
@@ -90,19 +96,40 @@ class Recorder_sync(object):
             height=int(img.shape[0]*scale_percent/100)
             img_new=cv2.resize(img, (width,height),)
             self.cam_frames.append(img)
-        
-        # mj frames
-        frame=self.renderer.render()
-        self.frames.append(frame)
-        dt=datetime.datetime.now()
-        dt_str=dt.strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
-        self.timestamps.append(dt_str)
         # corrections
         if corr_flag==False:
             self.corrections.append(None)
         
         else:
             self.corrections.append(correction)
+
+    def record_mj(self,corr_flag=False,correction=None):
+        self.renderer.update_scene(self.env.data, "track_cf2")
+        if self.controller is not None:
+            self.plot_mpc_traj()
+        #print(self.scene.ngeom)
+        #input()
+        # mj frames
+        frame=self.renderer.render()
+        self.frames.append(frame)
+        dt=datetime.datetime.now()
+        dt_str=dt.strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
+        self.timestamps.append(dt_str)
+
+        if corr_flag==False:
+            self.corrections.append(None)
+        
+        else:
+            self.corrections.append(correction)
+
+    def record_cam(self):
+        if self.cam_flag:
+            ret, img = self.cap.read()
+            scale_percent=60
+            width=int(img.shape[1]*scale_percent/100)
+            height=int(img.shape[0]*scale_percent/100)
+            img_new=cv2.resize(img, (width,height),)
+            self.cam_frames.append(img)
         
 
 
