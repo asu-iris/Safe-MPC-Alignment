@@ -3,3 +3,4 @@ __pycache__/
 MUJOCO_LOG.TXT
 *.txt
 Data/
+weights.npy

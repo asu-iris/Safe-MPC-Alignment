@@ -21,11 +21,12 @@ class VideoMaker(object):
         frames=[None]
         for i in range(1,n_imgs):
             filename=os.path.join(self.path,'mj_'+str(i)+'.jpg')
-            if corrs[i-1] != 'reset':
-                frames.append(cv2.imread(filename))
+            # if corrs[i-1] != 'reset':
+            #     frames.append(cv2.imread(filename))
             
-            else:
-                frames.append(None)
+            # else:
+            #     frames.append(None)
+            frames.append(cv2.imread(filename))
         print('valid frames mj', sum(x is not None for x in frames))
         video=cv2.VideoWriter(os.path.join(self.path,'demo.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
         text_cnt=0
@@ -56,11 +57,11 @@ class VideoMaker(object):
         frames_hand=[None]
         for i in range(1,n_imgs):
             filename=os.path.join(self.path,'cam_'+str(i)+'.jpg')
-            if corrs[i-1] != 'reset':
-                frames_hand.append(cv2.imread(filename))
+            # if corrs[i-1] != 'reset':
+            #     frames_hand.append(cv2.imread(filename))
             
-            else:
-                frames_hand.append(None)
+            # else:
+            #     frames_hand.append(None)
         print('valid frames cam', sum(x is not None for x in frames))
         video=cv2.VideoWriter(os.path.join(self.path,'hand.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
         for i in range(n_imgs):
@@ -102,7 +103,7 @@ class VideoMaker(object):
 
 if __name__=='__main__':
     path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test')
-    vm=VideoMaker(path,cam_flag=True)
+    vm=VideoMaker(path,cam_flag=False)
     vm.process()
 
 

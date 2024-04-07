@@ -56,12 +56,12 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer,
                     if MSG[0] == 'quit':
                         MSG[0] = None
                         visualizer.close_window()
-                        return True,num_corr
+                        return True,num_corr,learned_theta
                     
                     if MSG[0] == 'fail':
                         MSG[0] = None
                         visualizer.close_window()
-                        return False,num_corr
+                        return False,num_corr,learned_theta
                     
                     if MSG[0] == 'reset':
                         MSG[0] = None
@@ -80,7 +80,7 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer,
                     try:
                         learned_theta, C = mve_calc.solve()
                     except:
-                        return False,num_corr
+                        return False,num_corr,learned_theta
                     
                     print('vol', np.log(np.linalg.det(C)))
 
@@ -95,15 +95,16 @@ def mainloop(learned_theta,uav_env,controller,hb_calculator,mve_calc,visualizer,
                 #print(x.flatten())
                 u = controller.control(x, weights=learned_theta)
 
+                #visualization
+                visualizer.render_update()
+
+                uav_env.step(u)
+
                 #recording
                 recorder.record(correction_flag,human_corr_str)
                 correction_flag=False
                 human_corr_str=None
 
-                #visualization
-                visualizer.render_update()
-
-                uav_env.step(u)
                 time.sleep(0.05)
 
             else:
@@ -189,9 +190,9 @@ logger=UserLogger()
 
 #########################################################################################
 #recorder
-recorder=Recorder_sync(env=uav_env,controller=controller,cam_flag=True)
+recorder=Recorder_sync(env=uav_env,controller=controller,cam_flag=False)
 #########################################################################################
-flag,cnt=mainloop(learned_theta=learned_theta,
+flag,cnt,weights=mainloop(learned_theta=learned_theta,
          uav_env=uav_env,
          controller=controller,
          hb_calculator=hb_calculator,
@@ -199,7 +200,7 @@ flag,cnt=mainloop(learned_theta=learned_theta,
          visualizer=visualizer,
          logger=logger,
          recorder=recorder)
-print(flag,cnt)
-logger.log_termination(flag,cnt)
-recorder.write()
+print(flag,cnt,weights)
+logger.log_termination(flag,cnt,weights)
+#recorder.write()
 sys.exit()
