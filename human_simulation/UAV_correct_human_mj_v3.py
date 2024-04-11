@@ -126,6 +126,9 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                 while PAUSE[0]:
                     time.sleep(0.2)
 
+#Configuration of log directory
+USER_ID=0
+TRAIL_ID=0
 
 # list for msg passing
 PAUSE = [False]
@@ -203,7 +206,9 @@ mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)  # Theta_0
 
 #########################################################################################
 # logger
-logger = UserLogger()
+logger_path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','user_study_uav'
+                         ,"user_"+str(USER_ID),'trail_'+str(TRAIL_ID))
+logger = UserLogger(user=USER_ID,trail=TRAIL_ID,dir=logger_path)
 #########################################################################################
 
 #########################################################################################
