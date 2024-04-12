@@ -4,6 +4,7 @@ import sys,os
 sys.path.append(os.path.abspath(os.path.dirname(os.getcwd())))
 sys.path.append(os.path.abspath(os.getcwd()))
 from Envs.UAV import UAV_env,UAV_env_mj
+from Envs.robot_arm import ARM_env_mj
 from Solvers.OCsolver import ocsolver_v2,ocsolver_v3
 
 import mujoco
@@ -155,6 +156,52 @@ class uav_visualizer_mj_v3(uav_visualizer_mj_v2):
     def plot_target(self):
         self.scene.geoms[self.scene.ngeom-1].pos=self.target_pos
 
+class uav_visualizer_mj_v3(uav_visualizer_mj_v2):
+    def __init__(self, env: UAV_env_mj, controller: ocsolver_v3 = None) -> None:
+        super().__init__(env, controller)
+
+    def render_init(self):
+        super().render_init()
+        # register target ball
+        self.scene.ngeom+=1
+        mujoco.mjv_initGeom(
+            self.scene.geoms[self.scene.ngeom-1],
+            type=mujoco.mjtGeom.mjGEOM_SPHERE,
+            size=[0.2, 0, 0],
+            pos=-10*np.ones(3),
+            mat=np.eye(3).flatten(),
+            rgba=np.array([0, 0, 1, 1])
+        )
+        print(self.scene.ngeom)
+
+    def set_target_pos(self,target_pos):
+        self.target_pos=target_pos
+
+    def render_update(self):
+        self.plot_target()
+        self.viewer.sync()
+        #print(self.scene.geoms[self.scene.ngeom-1].pos)
+        super().render_update()
+        
+
+    def plot_target(self):
+        self.scene.geoms[self.scene.ngeom-1].pos=self.target_pos
+
+class arm_visualizer_mj_v1(object):
+    def __init__(self,env:ARM_env_mj,controller:ocsolver_v2=None) -> None:
+        self.env=env
+        self.controller=controller
+        self.mpc_horizon=15
+
+    def render_init(self):
+        self.viewer=mujoco.viewer.launch_passive(self.env.model, self.env.data)
+
+    def render_update(self):
+        self.viewer.sync()
+    
+    def close_window(self):
+        self.viewer.close()
+        print('window closed')
 
 if __name__=='__main__':
     filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'mujoco_uav','bitcraze_crazyflie_2','scene.xml')
