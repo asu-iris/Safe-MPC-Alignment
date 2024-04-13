@@ -5,6 +5,7 @@ import mujoco
 import mujoco.viewer
 
 import os
+import time
 
 class Robot_Arm_model(object):
     def __init__(self,dt) -> None:
@@ -50,25 +51,50 @@ class ARM_env_mj(object):
     def __init__(self, xml_path) -> None:
         self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
+        ini_joint=np.zeros(8)
+        ini_joint[0]=0
+        ini_joint[3]=-1.5
+        ini_joint[5]=1.5
+        self.set_init_state_v(ini_joint)
 
 
     def set_init_state(self, x: np.ndarray):
         mujoco.mj_resetData(self.model, self.data)
         x = x.flatten()
-        self.data.qpos = x
+        self.data.qpos[0:7] = x[0:7]
+        self.data.ctrl = x
+        for i in range(100):
+            mujoco.mj_step(self.model, self.data)
+
+    def set_init_state_v(self, x: np.ndarray):
+        mujoco.mj_resetData(self.model, self.data)
+        x = x.flatten()
+        self.data.qpos[0:7] = x[0:7]
+        self.data.ctrl = np.zeros(8)
+        for i in range(100):
+            mujoco.mj_step(self.model, self.data)
 
     def step(self, u, dt):  # u:speed of joints
         loop_num=int(dt/0.002)
         inner_ctrl = self.data.qpos[0:7] + u*dt
-        #print('inner',inner_ctrl)
+        print('ctrl',self.data.ctrl)
+        self.data.ctrl[0:7] = inner_ctrl.flatten()
+        self.data.ctrl[7] = 0
         for i in range(loop_num):
-            self.data.ctrl[0:7] = inner_ctrl.flatten()
-            self.data.ctrl[7] = 0
             mujoco.mj_step(self.model, self.data)
+            #print(self.data.qpos[1])
 
+    def step_vel(self, u, dt):  # u:speed of joints
+        loop_num=int(dt/0.002)
+        #print('ctrl',self.data.ctrl)
+        self.data.ctrl[0:7] = u.flatten()
+        self.data.ctrl[7] = 0
+        for i in range(loop_num):
+            mujoco.mj_step(self.model, self.data)
+            #print(self.data.qpos[1])
 
     def get_curr_state(self):
-        return self.data.qpos[0:7]
+        return self.data.qpos[0:7].copy()
 
 def Rot_x(alpha):
     return cd.vertcat(
@@ -167,14 +193,13 @@ if __name__=='__main__':
                         'mujoco_arm', 'franka_emika_panda',
                         'scene.xml')
     env=ARM_env_mj(filepath)
-    viewer=mujoco.viewer.launch(env.model,env.data)
-    exit()
-    filepath = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
-                        'mujoco_arm', 'franka_emika_panda',
-                        'scene.xml')
-    print('path', filepath)
-    env=ARM_env_mj(filepath)
-    viewer=mujoco.viewer.launch(env.model,env.data)
-    for i in range(20):
-        env.step(0.05*np.ones(7),0.1)
+    #viewer=mujoco.viewer.launch(env.model,env.data)
+    #exit()
+    #env=ARM_env_mj(filepath)
+    viewer=mujoco.viewer.launch_passive(env.model,env.data)
+    print(env.get_curr_state())
+    for i in range(100):
+        env.step_vel(0.0*np.ones(7),0.1)
         print(env.get_curr_state())
+        viewer.sync()
+        time.sleep(0.1)
