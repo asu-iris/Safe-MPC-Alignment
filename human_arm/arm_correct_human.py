@@ -17,16 +17,16 @@ filepath = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
 print('path', filepath)
 
 dt=0.1
-Horizon=20
-target_end_pos=(0.0,0.5,0.5)
+Horizon=10
+target_end_pos=[0.5,0.5,0.3]
 
 env=ARM_env_mj(filepath)
 arm_model=Robot_Arm_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0.1,0.1,0.1,4]) * 1e-1
+step_cost_vec = np.array([1,1,4,0.05]) * 1e-1
 step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
-term_cost_vec = np.array([5, 5, 5]) * 1e1
+term_cost_vec = np.array([5, 5, 20]) * 1e1
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
 
 controller = ocsolver_v3('arm control')
@@ -40,19 +40,20 @@ controller.construct_prob(horizon=Horizon)
 visualizer = arm_visualizer_mj_v1(env, controller=controller)
 visualizer.render_init()
 
-for i in range(400):
+for i in range(600):
     x=env.get_curr_state()
     #print(x)
     #print(arm_model.calc_end_pos(x))
     #break
-    u=controller.control(x)
+    u=controller.control(x,target_r=target_end_pos)
+    #target_end_pos[2]-=0.001
     #print(u)
-    env.step(0,dt)
+    env.step(u,dt)
     x=env.get_curr_state()
-    print(x)
+    #print(x)
     print(arm_model.calc_end_pos(x))
     #break
     visualizer.render_update()
-    time.sleep(10)
+    time.sleep(0.01)
 
 visualizer.close_window()
