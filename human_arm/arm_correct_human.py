@@ -8,6 +8,7 @@ import casadi as cd
 from Envs.robot_arm import ARM_env_mj,Robot_Arm_model
 from Solvers.OCsolver import  ocsolver_v3
 import numpy as np
+from matplotlib import pyplot as plt
 
 from utils.Visualize_mj import arm_visualizer_mj_v1
 
@@ -40,14 +41,15 @@ controller.construct_prob(horizon=Horizon)
 visualizer = arm_visualizer_mj_v1(env, controller=controller)
 visualizer.render_init()
 
-for i in range(400):
+u_list=[]
+for i in range(200):
     x=env.get_curr_state()
     #print(x)
     #print(arm_model.calc_end_pos(x))
     #break
     u=controller.control(x,target_r=target_end_pos)
     #target_end_pos[2]-=0.001
-    #print(u)
+    u_list.append(np.linalg.norm(u))
     env.step_vel(u,dt)
     x=env.get_curr_state()
     #print(x)
@@ -62,3 +64,6 @@ for i in range(400):
     time.sleep(0.05)
 
 visualizer.close_window()
+plt.figure()
+plt.plot(u_list)
+plt.show()
