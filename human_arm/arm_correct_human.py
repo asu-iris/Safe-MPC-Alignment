@@ -16,15 +16,15 @@ filepath = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                     'scene.xml')
 print('path', filepath)
 
-dt=0.05
+dt=0.1
 Horizon=10
-target_end_pos=[0.4,0.4,0.2]
+target_end_pos=[-0.5,0.3,0.3]
 
 env=ARM_env_mj(filepath)
 arm_model=Robot_Arm_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0,0,0,0.05]) * 1e-1
+step_cost_vec = np.array([0,0,0,0.4]) * 1e-1
 step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
 term_cost_vec = np.array([1, 1, 1]) * 1e0
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
@@ -59,6 +59,6 @@ for i in range(400):
     print('---------------------')
     #break
     visualizer.render_update()
-    time.sleep(0.01)
+    time.sleep(0.05)
 
 visualizer.close_window()
