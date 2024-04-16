@@ -46,7 +46,54 @@ class Robot_Arm_model(object):
         current_end_pos=(DH_to_Mat(q) @ cd.DM(np.array([0,0,0,1])))[0:3]
         return current_end_pos.full()
 
+class End_Effector_model(object):
+    def __init__(self,dt) -> None:
+        self.dt=dt
+
+    def get_dyn_f(self):
+        x_t=cd.SX.sym('x_t',7)
+        r_t=x_t[0:3]
+        q_t=x_t[3:7] # from end to the world!
+        u_t=cd.SX.sym('u_t',6) #[v,w]
+        v_t=u_t[0:3]
+        w_t=u_t[3:6]
+
+        r_t_1= self.dt*v_t + r_t
+
+        d_q = 0.5 * Omega(w_t) @ q_t
+        q_t_1= self.dt*d_q+ q_t
+
+        x_t_1=cd.vertcat(r_t_1,q_t_1)
+        return cd.Function('arm_dynamics', [x_t, u_t], [x_t_1])
     
+    def get_step_cost_param(self, param_vec: np.ndarray): #param:[kr,kq,ku]
+        x=cd.SX.sym('q',7) #[r,q]
+        u=cd.SX.sym('u',6) #speed control
+
+        target_x=cd.SX.sym('target_x',7)
+        target_r=target_x[0:3]
+        target_q=target_x[3:7]
+
+        l_vec=cd.vertcat(cd.sumsqr(x[0:3]-target_r),q_dist(x[3:7],target_q),cd.sumsqr(u))
+        p_vec = cd.DM(param_vec)
+        cost=p_vec.T @ l_vec
+        #print(cost)
+        return cd.Function('step_cost', [x, u, target_x], [cost])
+    
+    def get_terminal_cost_param(self, param_vec: np.ndarray): #param:[kr,kq]
+        x=cd.SX.sym('q',7) #[r,q]
+        u=cd.SX.sym('u',6) #speed control
+
+        target_x=cd.SX.sym('target_x',7)
+        target_r=target_x[0:3]
+        target_q=target_x[3:7]
+
+        l_vec=cd.vertcat(cd.sumsqr(x[0:3]-target_r),q_dist(x[3:7],target_q))
+        p_vec = cd.DM(param_vec)
+        cost=p_vec.T @ l_vec
+
+        return cd.Function('term_cost', [x, u, target_x], [cost])
+        
 class ARM_env_mj(object):
     def __init__(self, xml_path) -> None:
         self.model = mujoco.MjModel.from_xml_path(xml_path)
@@ -96,6 +143,50 @@ class ARM_env_mj(object):
     def get_curr_state(self):
         return self.data.qpos[0:7].copy()
 
+class EFFECTOR_env_mj(object):
+    def __init__(self, xml_path) -> None:
+        self.model = mujoco.MjModel.from_xml_path(xml_path)
+        self.data = mujoco.MjData(self.model)
+
+        self.last_ang_vel=np.zeros((7,1))
+
+        ini_joint=np.zeros(8)
+        ini_joint[0]=0
+        ini_joint[3]=-1.5
+        ini_joint[5]=1.5
+        self.set_init_state_v(ini_joint)
+
+    def set_init_state_v(self, x: np.ndarray):
+        mujoco.mj_resetData(self.model, self.data)
+        x = x.flatten()
+        self.data.qpos[0:7] = x[0:7]
+        self.data.ctrl = np.zeros(8)
+        for i in range(100):
+            mujoco.mj_step(self.model, self.data)
+
+    def step(self, u, dt):  # u:speed in end effector
+        u=np.array(u)
+        loop_num=int(dt/0.002)
+
+        site_id=mujoco.mj_name2id(env.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
+        jac_p=np.zeros((3,9))
+        jac_r=np.zeros((3,9))
+        mujoco.mj_jacSite(env.model,env.data,jac_p,jac_r,site_id)
+        Jac=np.concatenate([jac_p[:,0:7],jac_r[:,0:7]])
+        #print('shape',Jac.shape)
+        J_Inv=np.linalg.pinv(Jac)
+        inner_ctrl = J_Inv @ u.reshape(-1,1) + (np.eye(7)-J_Inv @ Jac) @ self.last_ang_vel
+        self.last_ang_vel = inner_ctrl 
+        #print('ctrl',inner_ctrl)
+        self.data.ctrl[0:7] = inner_ctrl.flatten()
+        self.data.ctrl[7] = 0
+        for i in range(loop_num):
+            mujoco.mj_step(self.model, self.data)
+            #print(self.data.qpos[1])
+
+    def get_curr_joints(self):
+        return self.data.qpos[0:7].copy()
+    
 def Rot_x(alpha):
     return cd.vertcat(
         cd.horzcat(1,0,0,0),
@@ -182,6 +273,32 @@ def DH_to_Mat(q):
         T=T@mat
     return T
 
+def Quat_Rot(q):
+    # Rot = cd.vertcat(
+    #        cd.horzcat(1 - 2 * (q[2] ** 2 + q[3] ** 2), 2 * (q[1] * q[2] + q[0] * q[3]), 2 * (q[1] * q[3] - q[0] * q[2])),
+    #        cd.horzcat(2 * (q[1] * q[2] - q[0] * q[3]), 1 - 2 * (q[1] ** 2 + q[3] ** 2), 2 * (q[2] * q[3] + q[0] * q[1])),
+    #       cd.horzcat(2 * (q[1] * q[3] + q[0] * q[2]), 2 * (q[2] * q[3] - q[0] * q[1]), 1 - 2 * (q[1] ** 2 + q[2] ** 2))
+    #   )
+    Rot = cd.vertcat(
+        cd.horzcat(1 - 2 * (q[2] ** 2 + q[3] ** 2), 2 * (q[1] * q[2] - q[0] * q[3]), 2 * (q[1] * q[3] + q[0] * q[2])),
+        cd.horzcat(2 * (q[1] * q[2] + q[0] * q[3]), 1 - 2 * (q[1] ** 2 + q[3] ** 2), 2 * (q[2] * q[3] - q[0] * q[1])),
+        cd.horzcat(2 * (q[1] * q[3] - q[0] * q[2]), 2 * (q[2] * q[3] + q[0] * q[1]), 1 - 2 * (q[1] ** 2 + q[2] ** 2))
+    )
+    return Rot
+
+def Omega(w):
+    Omeg = cd.vertcat(
+        cd.horzcat(0, -w[0], -w[1], -w[2]),
+        cd.horzcat(w[0], 0, w[2], -w[1]),
+        cd.horzcat(w[1], -w[2], 0, w[0]),
+        cd.horzcat(w[2], w[1], -w[0], 0),
+    )
+    return Omeg
+
+def q_dist(q_1, q_2):
+    I = cd.DM(np.eye(3))
+    return 0.5 * cd.trace(I - Quat_Rot(q_2).T @ Quat_Rot(q_1))
+
 if __name__=='__main__':
     test_q=np.zeros(7)
     #viewer=mujoco.viewer.launch()
@@ -192,14 +309,25 @@ if __name__=='__main__':
     filepath = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                         'mujoco_arm', 'franka_emika_panda',
                         'scene.xml')
-    env=ARM_env_mj(filepath)
+    #env=ARM_env_mj(filepath)
+    env=EFFECTOR_env_mj(filepath)
     #viewer=mujoco.viewer.launch(env.model,env.data)
     #exit()
     #env=ARM_env_mj(filepath)
     viewer=mujoco.viewer.launch_passive(env.model,env.data)
-    print(env.get_curr_state())
+    print(env.get_curr_joints())
+    id=mujoco.mj_name2id(env.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
+    jac_p=np.zeros((3,9))
+    jac_r=np.zeros((3,9))
+    mujoco.mj_jacSite(env.model,env.data,jac_p,jac_r,id)
+    print(jac_p)
+    print(jac_r)
     for i in range(100):
-        env.step_vel(0.0*np.ones(7),0.1)
-        print(env.get_curr_state())
+        ctrl=np.zeros(6)
+        ctrl[5]=-0.1
+        env.step(ctrl,0.1)
+        print(env.get_curr_joints())
         viewer.sync()
         time.sleep(0.1)
+
+    viewer.close()
