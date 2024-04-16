@@ -6,6 +6,7 @@ import mujoco.viewer
 
 import os
 import time
+from scipy.spatial.transform import Rotation as R
 
 class Robot_Arm_model(object):
     def __init__(self,dt) -> None:
@@ -61,13 +62,14 @@ class End_Effector_model(object):
         r_t_1= self.dt*v_t + r_t
 
         d_q = 0.5 * Omega(w_t) @ q_t
-        q_t_1= self.dt*d_q+ q_t
+        q_t_1 = self.dt*d_q+ q_t
+        #q_t_1 = q_t_1 / cd.norm_2(q_t_1)
 
         x_t_1=cd.vertcat(r_t_1,q_t_1)
         return cd.Function('arm_dynamics', [x_t, u_t], [x_t_1])
     
     def get_step_cost_param(self, param_vec: np.ndarray): #param:[kr,kq,ku]
-        x=cd.SX.sym('q',7) #[r,q]
+        x=cd.SX.sym('x',7) #[r,q]
         u=cd.SX.sym('u',6) #speed control
 
         target_x=cd.SX.sym('target_x',7)
@@ -81,8 +83,7 @@ class End_Effector_model(object):
         return cd.Function('step_cost', [x, u, target_x], [cost])
     
     def get_terminal_cost_param(self, param_vec: np.ndarray): #param:[kr,kq]
-        x=cd.SX.sym('q',7) #[r,q]
-        u=cd.SX.sym('u',6) #speed control
+        x=cd.SX.sym('x',7) #[r,q]
 
         target_x=cd.SX.sym('target_x',7)
         target_r=target_x[0:3]
@@ -92,7 +93,7 @@ class End_Effector_model(object):
         p_vec = cd.DM(param_vec)
         cost=p_vec.T @ l_vec
 
-        return cd.Function('term_cost', [x, u, target_x], [cost])
+        return cd.Function('term_cost', [x, target_x], [cost])
         
 class ARM_env_mj(object):
     def __init__(self, xml_path) -> None:
@@ -168,10 +169,10 @@ class EFFECTOR_env_mj(object):
         u=np.array(u)
         loop_num=int(dt/0.002)
 
-        site_id=mujoco.mj_name2id(env.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
+        site_id=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
         jac_p=np.zeros((3,9))
         jac_r=np.zeros((3,9))
-        mujoco.mj_jacSite(env.model,env.data,jac_p,jac_r,site_id)
+        mujoco.mj_jacSite(self.model,self.data,jac_p,jac_r,site_id)
         Jac=np.concatenate([jac_p[:,0:7],jac_r[:,0:7]])
         #print('shape',Jac.shape)
         J_Inv=np.linalg.pinv(Jac)
@@ -187,6 +188,10 @@ class EFFECTOR_env_mj(object):
     def get_curr_joints(self):
         return self.data.qpos[0:7].copy()
     
+def rot_to_quat(M):
+    r=R.from_matrix(M)
+    return r.as_quat().reshape(-1,1)    
+
 def Rot_x(alpha):
     return cd.vertcat(
         cd.horzcat(1,0,0,0),
@@ -274,11 +279,6 @@ def DH_to_Mat(q):
     return T
 
 def Quat_Rot(q):
-    # Rot = cd.vertcat(
-    #        cd.horzcat(1 - 2 * (q[2] ** 2 + q[3] ** 2), 2 * (q[1] * q[2] + q[0] * q[3]), 2 * (q[1] * q[3] - q[0] * q[2])),
-    #        cd.horzcat(2 * (q[1] * q[2] - q[0] * q[3]), 1 - 2 * (q[1] ** 2 + q[3] ** 2), 2 * (q[2] * q[3] + q[0] * q[1])),
-    #       cd.horzcat(2 * (q[1] * q[3] + q[0] * q[2]), 2 * (q[2] * q[3] - q[0] * q[1]), 1 - 2 * (q[1] ** 2 + q[2] ** 2))
-    #   )
     Rot = cd.vertcat(
         cd.horzcat(1 - 2 * (q[2] ** 2 + q[3] ** 2), 2 * (q[1] * q[2] - q[0] * q[3]), 2 * (q[1] * q[3] + q[0] * q[2])),
         cd.horzcat(2 * (q[1] * q[2] + q[0] * q[3]), 1 - 2 * (q[1] ** 2 + q[3] ** 2), 2 * (q[2] * q[3] - q[0] * q[1])),
@@ -324,9 +324,13 @@ if __name__=='__main__':
     print(jac_r)
     for i in range(100):
         ctrl=np.zeros(6)
-        ctrl[5]=-0.1
+        ctrl[0]=-0.0
+        ctrl[5]=-0.4
         env.step(ctrl,0.1)
-        print(env.get_curr_joints())
+        #print(env.get_curr_joints())
+        quat=np.zeros(4)
+        mujoco.mju_mat2Quat(quat,env.data.site_xmat[0])
+        print(quat/np.linalg.norm(quat))
         viewer.sync()
         time.sleep(0.1)
 
