@@ -330,7 +330,7 @@ if __name__=='__main__':
         #print(env.get_curr_joints())
         quat=np.zeros(4)
         mujoco.mju_mat2Quat(quat,env.data.site_xmat[0])
-        print(quat/np.linalg.norm(quat))
+        print(np.linalg.norm(quat))
         viewer.sync()
         time.sleep(0.1)
 

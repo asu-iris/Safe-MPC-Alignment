@@ -26,16 +26,16 @@ print('path', filepath)
 dt=0.1
 Horizon=20
 target_end_pos=[-0.3,0.4,0.5]
-target_quat=[1,0,0,0]
+target_quat=[0,0,0,1]
 target_x=target_end_pos+target_quat
 
 env=EFFECTOR_env_mj(filepath)
 arm_model=End_Effector_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0.5,0.5,0.8]) * 1e-1
+step_cost_vec = np.array([0.0,0.0,1.2]) * 1e-1
 step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
-term_cost_vec = np.array([0.5,0.2]) * 1e0
+term_cost_vec = np.array([0.5,0]) * 1e0
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
 
 controller = ocsolver_v4('arm control')
@@ -55,7 +55,7 @@ for i in range(200):
     quat=np.zeros(4)
     mujoco.mju_mat2Quat(quat,env.data.site_xmat[0])
 
-    quat=(quat/np.linalg.norm(quat)).reshape(-1,1)
+    quat=quat.reshape(-1,1)
     
     x=np.concatenate((pos,quat),axis=0)
     u=controller.control(x,target_x=target_x)
@@ -67,6 +67,9 @@ for i in range(200):
     print('---------------------')
     #print('calculated',arm_model.calc_end_pos(x))
     print('site',env.data.site_xpos)
+    site_quat=np.zeros(4)
+    mujoco.mju_mat2Quat(site_quat,env.data.site_xmat[0])
+    print('site quat', site_quat)
     print('pred',x_pred)
     print('---------------------')
     #break
