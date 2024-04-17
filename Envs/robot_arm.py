@@ -57,18 +57,17 @@ class End_Effector_model(object):
         q_t=x_t[3:7] # from end to the world!
         u_t=cd.SX.sym('u_t',6) #[v,w]
         v_t=u_t[0:3]
-        w_t=u_t[3:6]
+        w_t=u_t[3:6] #rotation in world frame
 
         r_t_1= self.dt*v_t + r_t
 
-        d_q = 0.5 * Omega(w_t) @ q_t
-        q_t_1 = self.dt*d_q+ q_t
-        #q_t_1 = q_t_1 / cd.norm_2(q_t_1)
+        d_q = 0.5 * Omega(Quat_Rot(q_t).T @ w_t) @ q_t
+        q_t_1 = q_t + d_q * self.dt
 
         x_t_1=cd.vertcat(r_t_1,q_t_1)
         return cd.Function('arm_dynamics', [x_t, u_t], [x_t_1])
     
-    def get_step_cost_param(self, param_vec: np.ndarray): #param:[kr,kq,ku]
+    def get_step_cost_param(self, param_vec: np.ndarray): #param:[kr,kq,kv,kw]
         x=cd.SX.sym('x',7) #[r,q]
         u=cd.SX.sym('u',6) #speed control
 
@@ -76,7 +75,8 @@ class End_Effector_model(object):
         target_r=target_x[0:3]
         target_q=target_x[3:7]
 
-        l_vec=cd.vertcat(cd.sumsqr(x[0:3]-target_r),q_dist(x[3:7],target_q),cd.sumsqr(u))
+        l_vec=cd.vertcat(cd.sumsqr(x[0:3]-target_r),q_dist(x[3:7],target_q),cd.sumsqr(u[0:3]),cd.sumsqr(u[3:]))
+
         p_vec = cd.DM(param_vec)
         cost=p_vec.T @ l_vec
         #print(cost)
@@ -90,6 +90,7 @@ class End_Effector_model(object):
         target_q=target_x[3:7]
 
         l_vec=cd.vertcat(cd.sumsqr(x[0:3]-target_r),q_dist(x[3:7],target_q))
+
         p_vec = cd.DM(param_vec)
         cost=p_vec.T @ l_vec
 
@@ -188,10 +189,6 @@ class EFFECTOR_env_mj(object):
     def get_curr_joints(self):
         return self.data.qpos[0:7].copy()
     
-def rot_to_quat(M):
-    r=R.from_matrix(M)
-    return r.as_quat().reshape(-1,1)    
-
 def Rot_x(alpha):
     return cd.vertcat(
         cd.horzcat(1,0,0,0),
@@ -286,6 +283,33 @@ def Quat_Rot(q):
     )
     return Rot
 
+def Rot_Quat(R):
+    eta=0.5*cd.sqrt(cd.trace(R)+1)
+    eps_0=0.5*cd.sign(R[2,1]-R[1,2])*cd.sqrt(R[0,0]-R[1,1]-R[2,2]+1)
+    eps_1=0.5*cd.sign(R[0,2]-R[2,0])*cd.sqrt(R[1,1]-R[2,2]-R[0,0]+1)
+    eps_2=0.5*cd.sign(R[1,0]-R[0,1])*cd.sqrt(R[2,2]-R[0,0]-R[1,1]+1)
+    return cd.vertcat(eta,eps_0,eps_1,eps_2)
+
+def Quat_mul(q_1,q_2):
+    eta_1=q_1[0]
+    eta_2=q_2[0]
+    eps_1=q_1[1:]
+    eps_2=q_2[1:]
+
+    return cd.vertcat(eta_1*eta_2-eps_1.T @ eps_2,
+                      eta_1*eps_2+eta_2*eps_1 + cd.cross(eps_1,eps_2))
+
+def Angle_Axis_Rot(theta,axis):
+    r_x=axis[0]
+    r_y=axis[1]
+    r_z=axis[2]
+    Rot = cd.vertcat(
+        cd.horzcat(r_x**2*(1-cd.cos(theta))+cd.cos(theta), r_x*r_y*(1-cd.cos(theta))-r_z*cd.sin(theta), r_x*r_z*(1-cd.cos(theta))+r_y*cd.sin(theta)),
+        cd.horzcat(r_x*r_y*(1-cd.cos(theta))+r_z*cd.sin(theta), r_y**2*(1-cd.cos(theta))+cd.cos(theta), r_y*r_z*(1-cd.cos(theta))-r_x*cd.sin(theta)),
+        cd.horzcat(r_x*r_z*(1-cd.cos(theta))-r_y*cd.sin(theta), r_y*r_z*(1-cd.cos(theta))+r_x*cd.sin(theta), r_z**2*(1-cd.cos(theta))+cd.cos(theta))
+    )
+    return Rot
+
 def Omega(w):
     Omeg = cd.vertcat(
         cd.horzcat(0, -w[0], -w[1], -w[2]),
@@ -324,13 +348,13 @@ if __name__=='__main__':
     print(jac_r)
     for i in range(100):
         ctrl=np.zeros(6)
-        ctrl[0]=-0.0
+        ctrl[2]=-0.01
         ctrl[5]=-0.4
         env.step(ctrl,0.1)
         #print(env.get_curr_joints())
         quat=np.zeros(4)
         mujoco.mju_mat2Quat(quat,env.data.site_xmat[0])
-        print(np.linalg.norm(quat))
+        print(quat)
         viewer.sync()
         time.sleep(0.1)
 

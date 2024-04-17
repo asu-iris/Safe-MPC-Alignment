@@ -24,18 +24,18 @@ filepath = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
 print('path', filepath)
 
 dt=0.1
-Horizon=20
-target_end_pos=[-0.3,0.4,0.5]
-target_quat=[0,0,0,1]
+Horizon=10
+target_end_pos=[0.3,0.4,0.5]
+target_quat=[0.0,1,0,0.0]
 target_x=target_end_pos+target_quat
 
 env=EFFECTOR_env_mj(filepath)
 arm_model=End_Effector_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0.0,0.0,1.2]) * 1e-1
+step_cost_vec = np.array([0.0,0.0,4.0,6.0]) * 1e-1
 step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
-term_cost_vec = np.array([0.5,0]) * 1e0
+term_cost_vec = np.array([1.5,2.5]) * 1e0
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
 
 controller = ocsolver_v4('arm control')
