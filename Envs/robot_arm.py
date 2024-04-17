@@ -189,6 +189,23 @@ class EFFECTOR_env_mj(object):
     def get_curr_joints(self):
         return self.data.qpos[0:7].copy()
     
+    def get_site_pos(self):
+        return self.data.site_xpos[0]
+    
+    def get_site_vel(self):
+        site_id=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
+        jac_p=np.zeros((3,9))
+        jac_r=np.zeros((3,9))
+        mujoco.mj_jacSite(self.model,self.data,jac_p,jac_r,site_id)
+        Jac=np.concatenate([jac_p[:,0:7],jac_r[:,0:7]])
+        return Jac @ self.data.qvel[0:7]
+    
+    def get_site_quat(self):
+        site_quat=np.zeros(4)
+        mujoco.mju_mat2Quat(site_quat,self.data.site_xmat[0])
+        return site_quat
+    
+    
 def Rot_x(alpha):
     return cd.vertcat(
         cd.horzcat(1,0,0,0),

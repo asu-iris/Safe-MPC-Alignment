@@ -25,15 +25,15 @@ print('path', filepath)
 
 dt=0.1
 Horizon=10
-target_end_pos=[0.3,0.4,0.5]
-target_quat=[0.0,1,0,0.0]
+target_end_pos=[-0.3,0.4,0.5]
+target_quat=[0.0,1.0,0.0,0.0]
 target_x=target_end_pos+target_quat
 
 env=EFFECTOR_env_mj(filepath)
 arm_model=End_Effector_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0.0,0.0,4.0,6.0]) * 1e-1
+step_cost_vec = np.array([0.0,0.0,2.0,4.0]) * 1e-1
 step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
 term_cost_vec = np.array([1.5,2.5]) * 1e0
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
@@ -49,26 +49,32 @@ controller.construct_prob(horizon=Horizon)
 visualizer = arm_visualizer_mj_v1(env, controller=controller)
 visualizer.render_init()
 
-u_list=[]
+site_x_list=[]
+site_y_list=[]
+site_v_list=[]
 for i in range(200):
-    pos=env.data.site_xpos.reshape(-1,1)
-    quat=np.zeros(4)
-    mujoco.mju_mat2Quat(quat,env.data.site_xmat[0])
-
+    pos=env.get_site_pos().reshape(-1,1)
+    quat=env.get_site_quat()
     quat=quat.reshape(-1,1)
     
     x=np.concatenate((pos,quat),axis=0)
-    u=controller.control(x,target_x=target_x)
+    theta=min(np.pi*i/300,np.pi/2)
+    track_target_pos=[0.55 * np.cos(theta), 0.55 * np.sin(theta), 0.55]
+    track_target_quat=[0,1,0,0]
+    track_target= track_target_pos + track_target_quat
+    u=controller.control(x,target_x=track_target)
     #print(u)
     #break
-    u_list.append(np.linalg.norm(u))
     env.step(u,dt)
     x_pred=controller.opt_traj[-7:]
     print('---------------------')
     #print('calculated',arm_model.calc_end_pos(x))
-    print('site',env.data.site_xpos)
-    site_quat=np.zeros(4)
-    mujoco.mju_mat2Quat(site_quat,env.data.site_xmat[0])
+    site_pos=env.get_site_pos()
+    print('site',site_pos)
+    site_x_list.append(site_pos[0])
+    site_y_list.append(site_pos[1])
+    site_v_list.append(np.linalg.norm(env.get_site_vel()))
+    site_quat=env.get_site_quat()
     print('site quat', site_quat)
     print('pred',x_pred)
     print('---------------------')
@@ -77,3 +83,15 @@ for i in range(200):
     time.sleep(0.05)
 
 visualizer.close_window()
+plt.figure(0)
+plt.title('xy')
+plt.scatter(site_x_list,site_y_list)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()
+
+plt.figure(1)
+plt.title('v')
+plt.plot(site_v_list)
+plt.xlabel('t')
+plt.show()
