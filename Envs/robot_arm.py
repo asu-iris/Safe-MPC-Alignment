@@ -190,7 +190,8 @@ class EFFECTOR_env_mj(object):
         return self.data.qpos[0:7].copy()
     
     def get_site_pos(self):
-        return self.data.site_xpos[0]
+        site_id=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
+        return self.data.site_xpos[site_id]
     
     def get_site_vel(self):
         site_id=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
@@ -201,10 +202,15 @@ class EFFECTOR_env_mj(object):
         return Jac @ self.data.qvel[0:7]
     
     def get_site_quat(self):
+        site_id=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
         site_quat=np.zeros(4)
-        mujoco.mju_mat2Quat(site_quat,self.data.site_xmat[0])
+        mujoco.mju_mat2Quat(site_quat,self.data.site_xmat[site_id])
         return site_quat
     
+    def get_hand_quat(self):
+        hand_id=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_BODY,'hand')
+        hand_quat=self.data.xquat[hand_id]
+        return hand_quat
     
 def Rot_x(alpha):
     return cd.vertcat(

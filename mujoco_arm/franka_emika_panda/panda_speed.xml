@@ -210,6 +210,9 @@
                     <body name="hand" pos="0 0 0.107" quat="0.9238795 0 0 -0.3826834">
                       <inertial mass="0.73" pos="-0.01 0 0.03" diaginertia="0.001 0.0025 0.0017"/>
                       <site name="flange" size="0.015" type="sphere" pos="0 0 0.08" rgba="0 0 1 1"/>
+                      <site name="end_x_axis" size="0.005" type="cylinder" fromto="0 0 0.08 0.1 0 0.08" rgba="1 0 0 1"/>  <!-- X-axis: Red -->
+                      <site name="end_y_axis" size="0.005" type="cylinder" fromto="0 0 0.08 0 0.1 0.08" rgba="0 1 0 1"/>  <!-- Y-axis: Green -->
+                      <site name="end_z_axis" size="0.005" type="cylinder" fromto="0 0 0.08 0 0 0.18" rgba="0 0 1 1"/>  <!-- Z-axis: Blue -->
                       <geom mesh="hand_0" material="off_white" class="visual"/>
                       <geom mesh="hand_1" material="black" class="visual"/>
                       <geom mesh="hand_2" material="black" class="visual"/>

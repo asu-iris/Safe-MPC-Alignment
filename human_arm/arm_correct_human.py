@@ -25,8 +25,8 @@ print('path', filepath)
 
 dt=0.1
 Horizon=10
-target_end_pos=[-0.3,0.4,0.5]
-target_quat=[0.0,1.0,0.0,0.0]
+target_end_pos=[0.3,0.4,0.5]
+target_quat=[0.1,0.3,0.95,0.0]
 target_x=target_end_pos+target_quat
 
 env=EFFECTOR_env_mj(filepath)
@@ -62,7 +62,7 @@ for i in range(200):
     track_target_pos=[0.55 * np.cos(theta), 0.55 * np.sin(theta), 0.55]
     track_target_quat=[0,1,0,0]
     track_target= track_target_pos + track_target_quat
-    u=controller.control(x,target_x=track_target)
+    u=controller.control(x,target_x=target_x)
     #print(u)
     #break
     env.step(u,dt)
@@ -70,13 +70,15 @@ for i in range(200):
     print('---------------------')
     #print('calculated',arm_model.calc_end_pos(x))
     site_pos=env.get_site_pos()
-    print('site',site_pos)
+    #print('site',site_pos)
     site_x_list.append(site_pos[0])
     site_y_list.append(site_pos[1])
     site_v_list.append(np.linalg.norm(env.get_site_vel()))
     site_quat=env.get_site_quat()
+    hand_quat=env.get_hand_quat()
     print('site quat', site_quat)
-    print('pred',x_pred)
+    print('hand quat', hand_quat)
+    #print('pred',x_pred)
     print('---------------------')
     #break
     visualizer.render_update()
