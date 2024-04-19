@@ -161,6 +161,7 @@ class EFFECTOR_env_mj(object):
         ini_joint[5]=2.15
         ini_joint[6]=-0.55
         ini_joint=np.array([-1.58753662,-0.31941105,-0.81050407,-2.28855788,-2.17938154,2.16288644,-0.20836714,0])
+        ini_joint=np.array([-1.76443251,0.52896963,-0.76707975,-1.50648771,-1.63760893 ,2.51745144,-0.26245633,0])
         #ini_joint=np.array([-1.40675402,0.08373927,-1.24319759,-1.97988368,-2.18859521,2.52699744,0.01613408,0])
         self.set_init_state_v(ini_joint)
 
@@ -183,7 +184,7 @@ class EFFECTOR_env_mj(object):
         Jac=np.concatenate([jac_p[:,0:7],jac_r[:,0:7]])
         #print('shape',Jac.shape)
         J_Inv=np.linalg.pinv(Jac)
-        inner_ctrl = J_Inv @ u.reshape(-1,1) + (np.eye(7)-J_Inv @ Jac) @ self.last_ang_vel
+        inner_ctrl = J_Inv @ u.reshape(-1,1) #+ (np.eye(7)-J_Inv @ Jac) @ self.last_ang_vel
         self.last_ang_vel = inner_ctrl 
         #print('ctrl',inner_ctrl)
         self.data.ctrl[0:7] = inner_ctrl.flatten()
@@ -351,8 +352,8 @@ def Omega(w):
     return Omeg
 
 def q_dist(q_1, q_2):
-    #I = cd.DM(np.eye(3))
-    #return 0.5 * cd.trace(I - Quat_Rot(q_2).T @ Quat_Rot(q_1))
+    I = cd.DM(np.eye(3))
+    return 0.5 * cd.trace(I - Quat_Rot(q_2).T @ Quat_Rot(q_1))
     return 1 - (q_1.T @ q_2)**2
 
 if __name__=='__main__':

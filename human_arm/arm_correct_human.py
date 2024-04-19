@@ -25,15 +25,16 @@ print('path', filepath)
 
 dt=0.1
 Horizon=10
-target_end_pos=[0.4,-0.3,0.5]
+target_end_pos=[0.35,-0.5,0.5]
 target_quat=[0.0,-0.707,0.0,0.707]
+#target_quat=[-0.36,0.6,0.36,-0.6]
 target_x=target_end_pos+target_quat
 
 env=EFFECTOR_env_mj(filepath)
 arm_model=End_Effector_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0.0,0.0,7.0,2.0]) * 1e-1
+step_cost_vec = np.array([0.0,0.0,8.0,2.0]) * 1e-1
 step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
 term_cost_vec = np.array([1.5,2.5]) * 1e0
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
@@ -52,7 +53,7 @@ visualizer.render_init()
 site_x_list=[]
 site_y_list=[]
 site_v_list=[]
-for i in range(200):
+for i in range(300):
     pos=env.get_site_pos().reshape(-1,1)
     quat=env.get_site_quat()
     quat=quat.reshape(-1,1)
@@ -62,6 +63,8 @@ for i in range(200):
     track_target_pos=[0.55 * np.cos(theta), 0.55 * np.sin(theta), 0.55]
     track_target_quat=[0,1,0,0]
     track_target= track_target_pos + track_target_quat
+    #if i > 100:
+        #target_x = [0.4,-0.5,0.5,0.0,-0.707,0.0,0.707]
     u=controller.control(x,target_x=target_x)
     #print(u)
     #break
