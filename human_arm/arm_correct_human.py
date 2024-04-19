@@ -25,15 +25,15 @@ print('path', filepath)
 
 dt=0.1
 Horizon=10
-target_end_pos=[0.3,0.4,0.5]
-target_quat=[0.1,0.3,0.95,0.0]
+target_end_pos=[0.4,-0.3,0.5]
+target_quat=[0.0,-0.707,0.0,0.707]
 target_x=target_end_pos+target_quat
 
 env=EFFECTOR_env_mj(filepath)
 arm_model=End_Effector_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0.0,0.0,2.0,4.0]) * 1e-1
+step_cost_vec = np.array([0.0,0.0,7.0,2.0]) * 1e-1
 step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
 term_cost_vec = np.array([1.5,2.5]) * 1e0
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
@@ -70,20 +70,21 @@ for i in range(200):
     print('---------------------')
     #print('calculated',arm_model.calc_end_pos(x))
     site_pos=env.get_site_pos()
-    #print('site',site_pos)
+    print('site',site_pos)
     site_x_list.append(site_pos[0])
     site_y_list.append(site_pos[1])
     site_v_list.append(np.linalg.norm(env.get_site_vel()))
     site_quat=env.get_site_quat()
     hand_quat=env.get_hand_quat()
     print('site quat', site_quat)
-    print('hand quat', hand_quat)
+    #print('hand quat', hand_quat)
     #print('pred',x_pred)
     print('---------------------')
     #break
     visualizer.render_update()
     time.sleep(0.05)
 
+print(env.get_curr_joints())
 visualizer.close_window()
 plt.figure(0)
 plt.title('xy')
