@@ -4,7 +4,9 @@ import sys,os
 sys.path.append(os.path.abspath(os.path.dirname(os.getcwd())))
 sys.path.append(os.path.abspath(os.getcwd()))
 from Envs.UAV import UAV_env,UAV_env_mj
-from Solvers.OCsolver import ocsolver_v2
+from Envs.robot_arm import EFFECTOR_env_mj
+from Solvers.OCsolver import ocsolver_v2,ocsolver_v4
+
 
 import mujoco
 import mujoco.viewer
@@ -153,5 +155,43 @@ class Recorder_sync(object):
                 cv2.imwrite(frame_filename,self.cam_frames[i])
         f.close()
 
+class Recorder_Arm(object):
+    def __init__(self,env:EFFECTOR_env_mj,controller:ocsolver_v4=None,height=480,width=640, fps=12, 
+                 filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test_arm'),
+                 cam_flag=False) -> None:
+        self.env=env
+        self.controller=controller
+        self.mpc_horizon=15
 
+        self.height = height
+        self.width = width
+        self.size=(width,height)
+        self.fps = fps
+
+        self.renderer=mujoco.Renderer(self.env.model, self.height, self.width)
+        self.renderer.update_scene(self.env.data, "cam_1")
+
+        self.filepath=filepath
+        self.frames=[]
     
+    def record_mj(self,corr_flag=False,correction=None):
+        self.renderer.update_scene(self.env.data, "cam_1")
+        frame=self.renderer.render()
+        self.frames.append(frame)
+
+    def write(self):
+        if not os.path.exists(self.filepath):
+            os.makedirs(self.filepath)
+
+        files=os.listdir(self.filepath)
+        for file in files:
+            os.remove(os.path.join(self.filepath,file))
+
+        video=cv2.VideoWriter(os.path.join(self.filepath,'demo.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
+        for frame in self.frames:
+            img=cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
+            video.write(img)
+
+        video.release()
+
+      

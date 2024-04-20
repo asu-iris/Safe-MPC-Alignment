@@ -11,8 +11,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from utils.Visualize_mj import arm_visualizer_mj_v1
+from utils.RBF import generate_rbf_quat
 from scipy.spatial.transform import Rotation as R
 import mujoco
+
+from utils.recorder import Recorder_Arm
 
 def rot_to_quat(M):
     r=R.from_matrix(M)
@@ -34,10 +37,20 @@ env=EFFECTOR_env_mj(filepath)
 arm_model=End_Effector_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0.0,0.0,8.0,2.0]) * 1e-1
+step_cost_vec = np.array([0.0,0.0,12.0,1.3]) * 1e-0
 step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
-term_cost_vec = np.array([1.5,2.5]) * 1e0
+term_cost_vec = np.array([3,3]) * 1e1
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
+
+#phi_func =  generate_rbf_quat(Horizon,-0.2,0.2,np.array([1,0,0]),num=10,bias=-0.1,epsilon=2.0,mode='default')
+phi_func =  generate_rbf_quat(Horizon,-0.2,0.15,np.array([1,0,0]),num=10,bias=-0.25,epsilon=2.2,mode='cumulative')
+test_weight = 2.0*np.ones(10)
+test_weight[3]= 0.0
+test_weight[4]=-0.5
+test_weight[5]=-1.0
+test_weight[6]=-1.0
+test_weight[7]=-2.0
+Gamma=1.0
 
 controller = ocsolver_v4('arm control')
 controller.set_state_param(7, None, None)
@@ -45,10 +58,14 @@ controller.set_ctrl_param(6, 6*[-1e10], 6*[1e10])
 controller.set_dyn(dyn_f)
 controller.set_step_cost(step_cost_f)
 controller.set_term_cost(term_cost_f)
+controller.set_g(phi_func, gamma=Gamma)
 controller.construct_prob(horizon=Horizon)
 
 visualizer = arm_visualizer_mj_v1(env, controller=controller)
 visualizer.render_init()
+
+#rec=Recorder_Arm(env)
+#rec.record_mj()
 
 site_x_list=[]
 site_y_list=[]
@@ -65,7 +82,7 @@ for i in range(300):
     track_target= track_target_pos + track_target_quat
     #if i > 100:
         #target_x = [0.4,-0.5,0.5,0.0,-0.707,0.0,0.707]
-    u=controller.control(x,target_x=target_x)
+    u=controller.control(x,target_x=target_x,weights=test_weight)
     #print(u)
     #break
     env.step(u,dt)
@@ -80,15 +97,19 @@ for i in range(300):
     site_quat=env.get_site_quat()
     hand_quat=env.get_hand_quat()
     print('site quat', site_quat)
-    #print('hand quat', hand_quat)
-    #print('pred',x_pred)
+    phi=phi_func(controller.opt_traj)
+    print('phi', phi)
+    print('g',phi.T @ cd.vertcat(1,test_weight))
     print('---------------------')
     #break
     visualizer.render_update()
-    time.sleep(0.05)
+    #rec.record_mj()
+    time.sleep(0.1)
 
+#rec.write()
 print(env.get_curr_joints())
 visualizer.close_window()
+exit()
 plt.figure(0)
 plt.title('xy')
 plt.scatter(site_x_list,site_y_list)
