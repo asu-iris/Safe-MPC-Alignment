@@ -805,7 +805,7 @@ class ocsolver_v4(object):
         assert hasattr(self, 'terminal_cost'), "terminal_cost"
 
         # define param for cost function
-        target_x = cd.SX.sym('target_r', self.x_dim)
+        target_x = cd.SX.sym('target_x', self.x_dim)
 
         # pre-define lists for casadi solver, joint optimization of x,u
         self.w = []

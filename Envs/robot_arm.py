@@ -146,24 +146,28 @@ class ARM_env_mj(object):
         return self.data.qpos[0:7].copy()
 
 class EFFECTOR_env_mj(object):
-    def __init__(self, xml_path) -> None:
+    def __init__(self, xml_path, dt) -> None:
+        self.dt=dt
         self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
 
         self.last_ang_vel=np.zeros((7,1))
 
-        ini_joint=np.zeros(8)
-        ini_joint[0]=-1.8
-        ini_joint[1]= 0.405
-        ini_joint[2]=-0.348
-        ini_joint[3]=-1.39
-        ini_joint[4]=-1.65
-        ini_joint[5]=2.15
-        ini_joint[6]=-0.55
-        ini_joint=np.array([-1.58753662,-0.31941105,-0.81050407,-2.28855788,-2.17938154,2.16288644,-0.20836714,0])
-        ini_joint=np.array([-1.76443251,0.52896963,-0.76707975,-1.50648771,-1.63760893 ,2.51745144,-0.26245633,0])
+        # ini_joint=np.zeros(8)
+        # ini_joint[0]=-1.8
+        # ini_joint[1]= 0.405
+        # ini_joint[2]=-0.348
+        # ini_joint[3]=-1.39
+        # ini_joint[4]=-1.65
+        # ini_joint[5]=2.15
+        # ini_joint[6]=-0.55
+        # ini_joint=np.array([-1.58753662,-0.31941105,-0.81050407,-2.28855788,-2.17938154,2.16288644,-0.20836714,0])
+        self.ini_joint=np.array([-1.76443251,0.52896963,-0.76707975,-1.50648771,-1.63760893 ,2.51745144,-0.26245633,0])
         #ini_joint=np.array([-1.40675402,0.08373927,-1.24319759,-1.97988368,-2.18859521,2.52699744,0.01613408,0])
-        self.set_init_state_v(ini_joint)
+        self.set_init_state_v(self.ini_joint)
+
+    def reset_env(self):
+        self.set_init_state_v(self.ini_joint)
 
     def set_init_state_v(self, x: np.ndarray):
         mujoco.mj_resetData(self.model, self.data)
@@ -173,9 +177,9 @@ class EFFECTOR_env_mj(object):
         for i in range(100):
             mujoco.mj_step(self.model, self.data)
 
-    def step(self, u, dt):  # u:speed in end effector
+    def step(self, u):  # u:speed in end effector
         u=np.array(u)
-        loop_num=int(dt/0.002)
+        loop_num=int(self.dt/0.002)
 
         site_id=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
         jac_p=np.zeros((3,9))
@@ -220,6 +224,12 @@ class EFFECTOR_env_mj(object):
         #input()
         hand_quat=self.data.xquat[hand_id]
         return hand_quat
+    
+    def get_curr_state(self):
+        pos=self.get_site_pos().reshape(-1,1)
+        quat=self.get_site_quat().reshape(-1,1)
+        x=np.concatenate((pos,quat),axis=0)
+        return x
     
 def Rot_x(alpha):
     return cd.vertcat(
