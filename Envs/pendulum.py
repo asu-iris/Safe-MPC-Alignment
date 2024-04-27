@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import sys
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import casadi as cd
@@ -85,6 +87,15 @@ class Pendulum_Env(object):
         plt.ylabel('dalpha')
         plt.scatter(np.array(self.x_traj)[:,0],np.array(self.x_traj)[:,1],s=10)
         plt.show()
+
+    def save_traj(self,dir=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','pendulum'),name='traj.npy'):
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+        filepath=os.path.join(dir,name)
+        np.save(filepath,np.array(self.x_traj))
+
+        
 
 class Pendulum_Model(object):
     def __init__(self,g,l,m,d,dt) -> None:

@@ -173,6 +173,9 @@ for i in range(200):
     print('demo step',i)
     u=controller.control(x)
     p_env.step(u)
+
+p_env.save_traj(name='constraint.npy')
+
 p_env.show_motion_scatter()
 plt.figure()
 plt.xlabel('alpha')
