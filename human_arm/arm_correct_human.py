@@ -120,7 +120,7 @@ env=EFFECTOR_env_mj(filepath,dt)
 arm_model=End_Effector_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0.0,0.0,20.0,2.6]) * 1e-0
+step_cost_vec = np.array([0.4,0.0,28.0,1.5]) * 1e0
 step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
 term_cost_vec = np.array([6,6]) * 1e1
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
@@ -131,7 +131,8 @@ hypo_ubs = 5 * np.ones(theta_dim)
 init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 
 #phi_func =  generate_rbf_quat(Horizon,-0.2,0.2,np.array([1,0,0]),num=10,bias=-0.1,epsilon=2.0,mode='default')
-phi_func =  generate_rbf_quat(Horizon,-0.10,0.2,np.array([1,0,0]),num=theta_dim,bias=-0.25,epsilon=1.8,mode='cumulative')
+phi_func =  generate_rbf_quat(Horizon,-0.20,0.2,np.array([1,0,0]),num=theta_dim,bias=-0.3,epsilon=1.8,mode='cumulative')
+#phi_func =  generate_rbf_quat(Horizon,-0.20,0.2,np.array([1,0,0]),num=theta_dim,bias=-0.20,epsilon=2.2,mode='default')
 Gamma=1.0
 
 controller = ocsolver_v4('arm control')
