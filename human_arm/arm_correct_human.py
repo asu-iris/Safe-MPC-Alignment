@@ -24,7 +24,8 @@ from utils.recorder import Recorder_Arm
 def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visualizer, logger=None, recorder=None):
     global PAUSE, MSG
     num_corr = 0
-    target_end_pos=[0.35,-0.5,0.5]
+    #target_end_pos=[0.35,-0.5,0.5] #[-0.6,-0.5,0.5]
+    target_end_pos=[-0.6,-0.5,0.5]
     target_quat=[0.0,-0.707,0.0,0.707]
     #target_quat=[-0.36,0.6,0.36,-0.6]
     target_x=target_end_pos+target_quat
@@ -33,7 +34,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
         print('current theta:', learned_theta)
         arm_env.reset_env()
         controller.reset_warmstart()
-
+        #print(env.get_site_pos())
         for i in range(400):
             if not PAUSE[0]:
                 if MSG[0]:
@@ -94,6 +95,9 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
             else:
                 while PAUSE[0]:
                     time.sleep(0.2)
+
+        #print(env.get_curr_joints())
+        print(env.get_site_pos())
 # list for msg passing
 PAUSE = [False]
 MSG = [None]
@@ -111,10 +115,6 @@ print('path', filepath)
 
 dt=0.1
 Horizon=10
-target_end_pos=[0.35,-0.5,0.5]
-target_quat=[0.0,-0.707,0.0,0.707]
-#target_quat=[-0.36,0.6,0.36,-0.6]
-target_x=target_end_pos+target_quat
 
 env=EFFECTOR_env_mj(filepath,dt)
 arm_model=End_Effector_model(dt=dt)
@@ -131,7 +131,7 @@ hypo_ubs = 5 * np.ones(theta_dim)
 init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 
 #phi_func =  generate_rbf_quat(Horizon,-0.2,0.2,np.array([1,0,0]),num=10,bias=-0.1,epsilon=2.0,mode='default')
-phi_func =  generate_rbf_quat(Horizon,-0.20,0.2,np.array([1,0,0]),num=theta_dim,bias=-0.3,epsilon=1.8,mode='cumulative')
+phi_func =  generate_rbf_quat(Horizon,-0.10,0.2,np.array([1,0,0]),num=theta_dim,bias=-0.3,epsilon=1.8,mode='cumulative')
 #phi_func =  generate_rbf_quat(Horizon,-0.20,0.2,np.array([1,0,0]),num=theta_dim,bias=-0.20,epsilon=2.2,mode='default')
 Gamma=1.0
 

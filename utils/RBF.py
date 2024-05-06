@@ -220,3 +220,41 @@ def generate_rbf_quat(Horizon,x_center,x_half,ref_axis,num,bias=-2,epsilon=1,mod
 
         phi = cd.vertcat(*phi_list)
         return cd.Function('phi', [traj], [phi])
+    
+def generate_rbf_quat_z(Horizon,x_center,x_half,ref_axis,num_q,z_min,z_max
+                        ,num_z,bias=-2,epsilon_q=1,epsilon_z=1,mode='default'):
+    x_dim=7
+    u_dim=6
+
+    phi_list_p2 = []
+
+    traj = cd.SX.sym('xi', (x_dim + u_dim) * Horizon + x_dim)
+    quat_func=generate_rbf_quat(Horizon,x_center,x_half,ref_axis,num_q
+                                ,bias=bias,epsilon=epsilon_q,mode=mode)
+    phi_p1=quat_func(traj)
+
+    if mode=='default':
+        next_z=traj[x_dim+u_dim+2:x_dim+u_dim+3]
+        next_x=traj[x_dim+u_dim]
+        for z in np.linspace(z_min,z_max,num_z):
+            phi_list_p2.append(sigmoid(x_half**2 - (next_x-x_center)**2,softness=50)*rbf_general(epsilon=epsilon_z,dist=next_z-z))
+
+        phi_p2 = cd.vertcat(*phi_list_p2)
+        phi = cd.vertcat(phi_p1,phi_p2)
+        return cd.Function('phi', [traj], [phi])
+    
+    if mode=='cumulative':
+        for z in np.linspace(z_min,z_max,num_z):
+            phi_i=0
+            disc=1
+            for i in range(5):
+                next_z=traj[(i+1)*(x_dim+u_dim)+2:(i+1)*(x_dim+u_dim)+3]
+                next_x = traj[(i+1)*(x_dim+u_dim)]
+                phi_i += sigmoid(x_half**2 - (next_x-x_center)**2,softness=50)*rbf_general(epsilon=epsilon_z,dist=next_z-z) * disc
+                disc *= 0.9
+
+            phi_list_p2.append(phi_i)
+
+        phi_p2 = cd.vertcat(*phi_list_p2)
+        phi = cd.vertcat(phi_p1,phi_p2)
+        return cd.Function('phi', [traj], [phi])
