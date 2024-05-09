@@ -905,8 +905,11 @@ class ocsolver_v4(object):
         # print('gamma*ln(-g)', self.gamma*np.log(-g_val))
         # print('B',sol['f'])
         g_value = self.g_func(init_state, w_opt, weights)
+        #phi = self.features(self.opt_traj)
+        # print('phi', phi)
         if hasattr(self, 'g_flag') and g_value > 0:
             print('g_value', g_value)
+            print('phi', phi)
             raise Exception("violation appears in trajectory solved")
         # print('g_value', g_value)
         return w_opt

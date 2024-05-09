@@ -14,8 +14,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from utils.Visualize_mj import arm_visualizer_mj_v1
-from utils.RBF import generate_rbf_quat
-from utils.Keyboard import arm_key_handler,arm_key_interface
+from utils.RBF import generate_rbf_quat_z
+from utils.Keyboard import arm_key_handler_v2,arm_key_interface_v2
 from utils.filter import LowPassFilter_Vel
 
 import mujoco
@@ -55,7 +55,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                         MSG[0] = None
                         #recorder.record(True, 'reset')
                         break
-                    human_corr = arm_key_interface(MSG)
+                    human_corr = arm_key_interface_v2(MSG)
                     human_corr_str = MSG[0]
                     MSG[0] = None
 
@@ -90,9 +90,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                 # visualization
                 visualizer.render_update()
 
-                u_f=filter.filter(u)
-                print(u,u_f)
-                arm_env.step(u_f)
+                arm_env.step(u)
                 time.sleep(0.05)
 
             else:
@@ -107,7 +105,7 @@ MSG = [None]
 
 # listener for keyboard ops
 listener = keyboard.Listener(
-    on_press=lambda key: arm_key_handler(key, PAUSE, MSG),
+    on_press=lambda key: arm_key_handler_v2(key, PAUSE, MSG),
     on_release=None)
 listener.start()
 
@@ -123,18 +121,21 @@ env=EFFECTOR_env_mj(filepath,dt)
 arm_model=End_Effector_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0.4,0.0,28.0,1.5]) * 1e0
-step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
+# step_cost_vec = np.array([0.4,0.0,28.0,1.0]) * 1e0
+# step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
+step_cost_vec = np.array([0.4,0.0,30.0,30.0,1.0,0.85]) * 1e0 #param:[kr,kq,kvx,kvy,kvz,kw]
+step_cost_f = arm_model.get_step_cost_param_sep(step_cost_vec)
 term_cost_vec = np.array([6,6]) * 1e1
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
 
-theta_dim = 10
+theta_dim = 20
 hypo_lbs = -3 * np.ones(theta_dim)
 hypo_ubs = 5 * np.ones(theta_dim)
 init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 
 #phi_func =  generate_rbf_quat(Horizon,-0.2,0.2,np.array([1,0,0]),num=10,bias=-0.1,epsilon=2.0,mode='default')
-phi_func =  generate_rbf_quat(Horizon,-0.10,0.2,np.array([1,0,0]),num=theta_dim,bias=-0.3,epsilon=1.8,mode='cumulative')
+phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.2,ref_axis=np.array([1,0,0]),num_q=10,
+                                z_min=0.2,z_max=0.9, num_z=10, bias=-0.6, epsilon_z=8.5, epsilon_q=1.8,z_factor=0.1,mode='cumulative')
 #phi_func =  generate_rbf_quat(Horizon,-0.20,0.2,np.array([1,0,0]),num=theta_dim,bias=-0.20,epsilon=2.2,mode='default')
 Gamma=1.0
 
@@ -159,7 +160,7 @@ mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)
 #rec=Recorder_Arm(env)
 #rec.record_mj()
 
-filter=LowPassFilter_Vel(0.8,0.5)
+filter=None
 mainloop(learned_theta=learned_theta,
          arm_env=env,
          controller=controller,

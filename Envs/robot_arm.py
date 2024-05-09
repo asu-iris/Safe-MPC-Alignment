@@ -10,6 +10,8 @@ from scipy.spatial.transform import Rotation as R
 
 INI_JOINT_0=np.array([-1.76443251,0.52896963,-0.76707975,-1.50648771,-1.63760893 ,2.51745144,-0.26245633,0])
 INI_JOINT_1=np.array([-0.58064602,0.83171903,-0.15405331,-0.90340588,-1.27926845, 0.71693826,-0.55468811,0])
+INI_JOINT_2=np.array([-0.66550676,0.4709727,-0.1340619,-1.42574864,-1.21649033,0.85241599,-0.36004747,0])
+
 
 class Robot_Arm_model(object):
     def __init__(self,dt) -> None:
@@ -79,6 +81,21 @@ class End_Effector_model(object):
         target_q=target_x[3:7]
 
         l_vec=cd.vertcat(cd.sumsqr(x[0:3]-target_r),q_dist(x[3:7],target_q),cd.sumsqr(u[0:3]),cd.sumsqr(u[3:]))
+
+        p_vec = cd.DM(param_vec)
+        cost=p_vec.T @ l_vec
+        #print(cost)
+        return cd.Function('step_cost', [x, u, target_x], [cost])
+    
+    def get_step_cost_param_sep(self, param_vec: np.ndarray): #param:[kr,kq,kvx,kvy,kvz,kw]
+        x=cd.SX.sym('x',7) #[r,q]
+        u=cd.SX.sym('u',6) #speed control
+
+        target_x=cd.SX.sym('target_x',7)
+        target_r=target_x[0:3]
+        target_q=target_x[3:7]
+
+        l_vec=cd.vertcat(cd.sumsqr(x[0:3]-target_r),q_dist(x[3:7],target_q),u[0:3]**2,cd.sumsqr(u[3:]))
 
         p_vec = cd.DM(param_vec)
         cost=p_vec.T @ l_vec
@@ -165,7 +182,7 @@ class EFFECTOR_env_mj(object):
         # ini_joint[5]=2.15
         # ini_joint[6]=-0.55
         # ini_joint=np.array([-1.58753662,-0.31941105,-0.81050407,-2.28855788,-2.17938154,2.16288644,-0.20836714,0])
-        self.ini_joint=INI_JOINT_1
+        self.ini_joint=INI_JOINT_2
         #ini_joint=np.array([-1.40675402,0.08373927,-1.24319759,-1.97988368,-2.18859521,2.52699744,0.01613408,0])
         self.set_init_state_v(self.ini_joint)
 

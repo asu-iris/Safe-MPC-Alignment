@@ -222,7 +222,7 @@ def generate_rbf_quat(Horizon,x_center,x_half,ref_axis,num,bias=-2,epsilon=1,mod
         return cd.Function('phi', [traj], [phi])
     
 def generate_rbf_quat_z(Horizon,x_center,x_half,ref_axis,num_q,z_min,z_max
-                        ,num_z,bias=-2,epsilon_q=1,epsilon_z=1,mode='default'):
+                        ,num_z,bias=-2,epsilon_q=1,epsilon_z=1,z_factor=0.2,mode='default'):
     x_dim=7
     u_dim=6
 
@@ -234,10 +234,10 @@ def generate_rbf_quat_z(Horizon,x_center,x_half,ref_axis,num_q,z_min,z_max
     phi_p1=quat_func(traj)
 
     if mode=='default':
-        next_z=traj[x_dim+u_dim+2:x_dim+u_dim+3]
+        next_z=traj[x_dim+u_dim+2]
         next_x=traj[x_dim+u_dim]
         for z in np.linspace(z_min,z_max,num_z):
-            phi_list_p2.append(sigmoid(x_half**2 - (next_x-x_center)**2,softness=50)*rbf_general(epsilon=epsilon_z,dist=next_z-z))
+            phi_list_p2.append(z_factor*sigmoid(x_half**2 - (next_x-x_center)**2,softness=50)*rbf_general(epsilon=epsilon_z,dist=next_z-z))
 
         phi_p2 = cd.vertcat(*phi_list_p2)
         phi = cd.vertcat(phi_p1,phi_p2)
@@ -248,9 +248,9 @@ def generate_rbf_quat_z(Horizon,x_center,x_half,ref_axis,num_q,z_min,z_max
             phi_i=0
             disc=1
             for i in range(5):
-                next_z=traj[(i+1)*(x_dim+u_dim)+2:(i+1)*(x_dim+u_dim)+3]
+                next_z=traj[(i+1)*(x_dim+u_dim)+2]
                 next_x = traj[(i+1)*(x_dim+u_dim)]
-                phi_i += sigmoid(x_half**2 - (next_x-x_center)**2,softness=50)*rbf_general(epsilon=epsilon_z,dist=next_z-z) * disc
+                phi_i += z_factor*sigmoid(x_half**2 - (next_x-x_center)**2,softness=50)*rbf_general(epsilon=epsilon_z,dist=next_z-z) * disc
                 disc *= 0.9
 
             phi_list_p2.append(phi_i)
