@@ -26,12 +26,16 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
     global PAUSE, MSG
     num_corr = 0
     #target_end_pos=[0.35,-0.5,0.5] #[-0.6,-0.5,0.5]
-    target_end_pos=[-0.6,-0.5,0.5]
+    target_pos_list=[[-0.6,-0.5,0.4],[-0.6,-0.5,0.5],[-0.6,-0.5,0.6]]
     target_quat=[0.0,-0.707,0.0,0.707]
     #target_quat=[-0.36,0.6,0.36,-0.6]
-    target_x=target_end_pos+target_quat
+    
+    target_idx=0
 
     while True:
+        target_x=target_pos_list[target_idx]+target_quat
+        target_idx=(target_idx+1)%3
+
         print('current theta:', learned_theta)
         arm_env.reset_env()
         controller.reset_warmstart()
@@ -135,7 +139,7 @@ init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 
 #phi_func =  generate_rbf_quat(Horizon,-0.2,0.2,np.array([1,0,0]),num=10,bias=-0.1,epsilon=2.0,mode='default')
 phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.2,ref_axis=np.array([1,0,0]),num_q=10,
-                                z_min=0.2,z_max=0.9, num_z=10, bias=-0.6, epsilon_z=8.5, epsilon_q=1.8,z_factor=0.1,mode='cumulative')
+                                z_min=0.2,z_max=0.9, num_z=10, bias=-0.8, epsilon_z=12, epsilon_q=1.8,z_factor=0.05,mode='cumulative')
 #phi_func =  generate_rbf_quat(Horizon,-0.20,0.2,np.array([1,0,0]),num=theta_dim,bias=-0.20,epsilon=2.2,mode='default')
 Gamma=1.0
 
