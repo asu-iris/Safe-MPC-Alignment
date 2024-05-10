@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.dirname(os.getcwd())))
 sys.path.append(os.path.abspath(os.getcwd()))
 
 import casadi as cd
-from Envs.robot_arm import EFFECTOR_env_mj, End_Effector_model
+from Envs.robot_arm import EFFECTOR_env_mj, End_Effector_model, DH_to_Mat
 from Solvers.OCsolver import  ocsolver_v4
 from Solvers.Cutter import  cutter_v4
 from Solvers.MVEsolver import mvesolver
@@ -35,7 +35,7 @@ env=EFFECTOR_env_mj(filepath,dt)
 arm_model=End_Effector_model(dt=dt)
 dyn_f = arm_model.get_dyn_f()
 
-step_cost_vec = np.array([0.8,0.0,1.0,1.5]) * 1e0
+step_cost_vec = np.array([8,0.0,1.0,1.5]) * 1e0
 step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
 term_cost_vec = np.array([6,6]) * 1e1
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
@@ -52,7 +52,7 @@ controller.construct_prob(horizon=Horizon)
 visualizer = arm_visualizer_mj_v1(env, controller=controller)
 visualizer.render_init()
 
-target_end_pos=[0.25,-0.5,0.5]
+target_end_pos=[-0.25,-0.5,0.5]
 target_quat=[0.0,-0.707,0.0,0.707]
 target_x=target_end_pos+target_quat
 for i in range(400):
@@ -61,6 +61,9 @@ for i in range(400):
     visualizer.render_update()
     env.step(u)
     time.sleep(0.1)
-    print(env.get_site_pos())
-
+    q=env.get_curr_joints()
+    calc_pos=(DH_to_Mat(q) @ np.array([0,0,0,1]))[0:3]
+    print('---------------------')
+    print('site',env.get_site_pos())
+    print('calc',calc_pos)
 print(env.get_curr_joints())
