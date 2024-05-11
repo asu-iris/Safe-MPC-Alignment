@@ -1,7 +1,7 @@
 import sys
 import os
 import time
-from pynput import keyboard
+
 sys.path.append(os.path.abspath(os.path.dirname(os.getcwd())))
 sys.path.append(os.path.abspath(os.getcwd()))
 
@@ -14,15 +14,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from utils.Visualize_mj import arm_visualizer_mj_v1
-from utils.RBF import generate_rbf_quat
-from utils.Keyboard import arm_key_handler,arm_key_interface
-from utils.filter import LowPassFilter_Vel
+
 
 import mujoco
 
 from utils.recorder import Recorder_Arm
 
-
+print(os.path.abspath(os.path.dirname(os.getcwd())))
 filepath = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                     'mujoco_arm', 'franka_emika_panda',
                     'scene.xml')
