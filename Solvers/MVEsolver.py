@@ -2,12 +2,16 @@ import numpy as np
 import cvxpy as cp
 from matplotlib import pyplot as plt
 
+import os
+
 class mvesolver(object):
-    def __init__(self,name,dim) -> None:
+    def __init__(self,name,dim,path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','mve_checkpoint')) -> None:
         self.name=name
         self.dim=dim
         self.constraint_a=[]
         self.constraint_b=[]
+
+        self.recovery_path=path
 
     def set_init_constraint(self,theta_lb,theta_ub): #init box constraint
         self.constraint_a=[]
@@ -16,14 +20,14 @@ class mvesolver(object):
         self.ub=np.array(theta_ub)
         I=np.eye(self.dim)
         for i in range(self.dim):
-            self.constraint_a.append(I[i])
+            self.constraint_a.append(I[:,i:i+1])
             self.constraint_b.append(self.ub[i])
-            self.constraint_a.append(-I[i])
+            self.constraint_a.append(-I[:,i:i+1])
             self.constraint_b.append(-self.lb[i])
 
     def add_constraint(self,a,b):#ax <= b
         self.constraint_a.append(np.reshape(np.array(a),(-1,1)))
-        self.constraint_b.append(np.reshape(np.array(b),(-1,1)))
+        self.constraint_b.append(float(b))
 
     def solve(self,tolerance=0.001):
         C = cp.Variable((self.dim, self.dim), symmetric=True)
@@ -57,7 +61,7 @@ class mvesolver(object):
         lines = []
         for i in range(len(self.constraint_a)):
             n = self.constraint_a[i].flatten()
-            b = self.constraint_b[i].flatten()
+            b = self.constraint_b[i]
             if abs(n[1]) < 1e-10:
                 y = range_y
                 x = np.array([b/n[0]]*range_y.size)
@@ -105,6 +109,34 @@ class mvesolver(object):
         plt.title('mve search')
         plt.savefig(dir)
 
+    def checkpoint(self):
+        # create the path
+        if not os.path.exists(self.recovery_path):
+            os.makedirs(self.recovery_path)
+
+        if len(self.constraint_a) <= 2*self.dim:
+            return
+        #print(self.constraint_a)
+        #print(self.constraint_b)
+        A = np.concatenate(self.constraint_a,axis=1)
+        #print(A)
+        B = np.array(self.constraint_b).reshape(-1,1)
+
+        data=np.concatenate((A.T,B),axis=1)
+        np.save(os.path.join(self.recovery_path,'checkpoint.npy'),data)
+
+    def recover(self):
+        self.constraint_a=[]
+        self.constraint_b=[]
+        data=np.load(os.path.join(self.recovery_path,'checkpoint.npy'))
+        A_T=data[:,:-1]
+        B=data[:,-1]
+        for i in range(A_T.shape[0]):
+            self.constraint_a.append(A_T[i].reshape(-1,1))
+        self.constraint_b=list(B)
+        d,C=self.solve()
+        return d
+
 if __name__=='__main__':
     testsol=mvesolver('test',2)
     testsol.set_init_constraint([-5,-5],[2,2])
@@ -113,5 +145,13 @@ if __name__=='__main__':
     testsol.add_constraint(np.array([2,-1]),0)
     #testsol.add_constraint(np.array([-2,1]),0)
     d_sol,C_sol= testsol.solve()
-    print(C_sol)
+    print(d_sol)
     testsol.draw(C_sol, d_sol)
+
+    testsol.checkpoint()
+    testsol_1=mvesolver('test_1',2)
+    testsol_1.set_init_constraint([-5,-5],[2,2])
+    d_rec=testsol_1.recover()
+    d_sol,C_sol= testsol_1.solve()
+    testsol_1.draw(C_sol, d_sol)
+    print(d_rec)
