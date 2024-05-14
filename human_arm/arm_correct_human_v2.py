@@ -119,7 +119,7 @@ filepath = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
 print('path', filepath)
 
 dt=0.1
-Horizon=10
+Horizon=20 #10
 
 env=EFFECTOR_env_mj(filepath,dt)
 arm_model=End_Effector_model(dt=dt)
@@ -127,9 +127,9 @@ dyn_f = arm_model.get_dyn_f()
 
 # step_cost_vec = np.array([0.4,0.0,28.0,1.0]) * 1e0
 # step_cost_f = arm_model.get_step_cost_param(step_cost_vec)
-step_cost_vec = np.array([0.4,0.0,30.0,30.0,1.0,0.85]) * 1e0 #param:[kr,kq,kvx,kvy,kvz,kw]
+step_cost_vec = np.array([2.0,1.0,30.0,30.0,1.0,0.85]) * 1e0 #param:[kr,kq,kvx,kvy,kvz,kw] [0.4,0.0,30.0,30.0,1.0,0.85]
 step_cost_f = arm_model.get_step_cost_param_sep(step_cost_vec)
-term_cost_vec = np.array([6,6]) * 1e1
+term_cost_vec = np.array([8,6]) * 1e1 #[6,6]
 term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
 
 theta_dim = 20
@@ -137,11 +137,10 @@ hypo_lbs = -3 * np.ones(theta_dim)
 hypo_ubs = 5 * np.ones(theta_dim)
 init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 
-#phi_func =  generate_rbf_quat(Horizon,-0.2,0.2,np.array([1,0,0]),num=10,bias=-0.1,epsilon=2.0,mode='default')
-phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.2,ref_axis=np.array([1,0,0]),num_q=10,
+phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.15,ref_axis=np.array([1,0,0]),num_q=10, #half:0.15
                                 z_min=0.2,z_max=0.9, num_z=10, bias=-0.8, epsilon_z=12, epsilon_q=1.8,z_factor=0.05,mode='cumulative')
-#phi_func =  generate_rbf_quat(Horizon,-0.20,0.2,np.array([1,0,0]),num=theta_dim,bias=-0.20,epsilon=2.2,mode='default')
-Gamma=1.0
+
+Gamma=1.5 #1.0
 
 controller = ocsolver_v4('arm control')
 controller.set_state_param(7, None, None)
