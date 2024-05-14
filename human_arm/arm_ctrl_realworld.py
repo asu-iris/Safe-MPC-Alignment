@@ -58,7 +58,7 @@ def main():
 
     #mpc utils
     dt=0.1
-    Horizon=10
+    Horizon=20
     arm_model=End_Effector_model(dt=dt)
     dyn_f = arm_model.get_dyn_f()
     step_cost_vec = np.array([0.8,0.0,30.0,30.0,1.0,0.85]) * 1e0 #param:[kr,kq,kvx,kvy,kvz,kw]
@@ -73,7 +73,7 @@ def main():
     #                             z_min=0.1,z_max=1.2, num_z=5, bias=-0.8, epsilon_z=7, epsilon_q=1.8,z_factor=0.1,mode='cumulative')
 
 
-    Gamma=1.0 #1.0
+    Gamma=1.5 #1.0
 
     controller = ocsolver_v4('arm control')
     controller.set_state_param(7, None, None)

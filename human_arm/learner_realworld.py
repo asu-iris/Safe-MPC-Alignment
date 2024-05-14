@@ -28,7 +28,7 @@ LATEST_TARGET = np.array([-0.65,-0.5,0.5,0.0,-0.707,0.0,0.707])
 #lock 1: correction data
 #lock 2: target position
 ros_lock_1=threading.Lock()
-ros_lock_2=threading.Lock()
+#ros_lock_2=threading.Lock()
 
 def listener_correction(data):
     global LATEST_HOMO_MATRIX,LATEST_CORR,CORR_FLAG
@@ -43,13 +43,13 @@ def listener_correction(data):
 
     # rospy.loginfo(rospy.get_caller_id() + "I heard %s", data)
 
-def listener_target(data):
-    global LATEST_TARGET
-    ros_lock_2.acquire()
-    LATEST_TARGET=np.array(data.data)
-    #print('target',LATEST_TARGET)
-    # unlock
-    ros_lock_2.release()
+# def listener_target(data):
+#     global LATEST_TARGET
+#     ros_lock_2.acquire()
+#     LATEST_TARGET=np.array(data.data)
+#     #print('target',LATEST_TARGET)
+#     # unlock
+#     ros_lock_2.release()
     
 
     
@@ -58,14 +58,14 @@ def main():
     # ros utils
     rospy.init_node('learner', anonymous=True)
     rospy.Subscriber("human_correction", Float64MultiArray, listener_correction, queue_size=100)
-    rospy.Subscriber("target_x", Float64MultiArray, listener_target, queue_size=100)
+    #rospy.Subscriber("target_x", Float64MultiArray, listener_target, queue_size=100)
 
     theta_pub = rospy.Publisher('theta', Float64MultiArray, queue_size=10)
     rate = rospy.Rate(10) #hz
 
     # Model
     dt=0.1
-    Horizon=10
+    Horizon=20
     arm_model=End_Effector_model(dt=dt)
     dyn_f = arm_model.get_dyn_f()
     step_cost_vec = np.array([0.8,0.0,30.0,30.0,1.0,0.85]) * 1e0 #param:[kr,kq,kvx,kvy,kvz,kw]
@@ -80,7 +80,7 @@ def main():
     # phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.2,ref_axis=np.array([1,0,0]),num_q=10,
     #                             z_min=0.1,z_max=1.2, num_z=5, bias=-0.8, epsilon_z=7, epsilon_q=1.8,z_factor=0.1,mode='cumulative')
     
-    Gamma=1.0 #
+    Gamma=1.5 #
 
     controller = ocsolver_v4('learner controller')
     controller.set_state_param(7, None, None)
@@ -127,12 +127,17 @@ def main():
             print('quat',corr_quat.flatten())
             corr_state=np.concatenate((corr_pose,corr_quat),axis=0)
 
-            # TODO Update Theta
-            ros_lock_2.acquire()
+            #Update Theta
+            #ros_lock_2.acquire()
             target_x=np.array(LATEST_TARGET)
-            ros_lock_2.release()
+            #ros_lock_2.release()
             
-            controller.control(corr_state, weights=LATEST_THETA, target_x=target_x)
+            try:
+                controller.control(corr_state, weights=LATEST_THETA, target_x=target_x)
+            except:
+                print("error in controller: learner stop")
+                return -1
+            
             correction[0:2]=0
             correction[2]*=10
             print('correction',correction)
@@ -146,6 +151,7 @@ def main():
                 LATEST_THETA, C = mve_calc.solve()
                 print('theta',LATEST_THETA.flatten())
             except:
+                print("error in mve solver: learner stop")
                 return -1
 
         
