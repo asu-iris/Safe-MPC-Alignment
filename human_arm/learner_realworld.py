@@ -146,6 +146,7 @@ def main():
                 LATEST_THETA, C = mve_calc.solve()
                 print('theta',LATEST_THETA.flatten())
             except:
+                print('abort: mvesolver crash')
                 return -1
 
         
