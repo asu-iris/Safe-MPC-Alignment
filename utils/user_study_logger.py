@@ -4,7 +4,7 @@ import numpy as np
 
 class UserLogger(object):
     def __init__(self,user=0,trail=0,dir=os.path.abspath(os.getcwd())) -> None:
-        self.filename='log_user_'+str(user)+'_trail_'+str(trail)+'.txt'
+        self.filename='log_user_'+str(user)+'_trial_'+str(trail)+'.txt'
         self.dir=dir
         self.filepath=os.path.join(self.dir,self.filename)
         if not os.path.exists(self.dir):
