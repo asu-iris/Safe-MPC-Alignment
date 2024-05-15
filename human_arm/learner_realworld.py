@@ -14,10 +14,13 @@ from Solvers.MVEsolver import mvesolver
 from utils.RBF import generate_rbf_quat_z
 import numpy as np
 
+from utils.user_study_logger import UserLogger,Realtime_Logger
 
 import rospy
 from std_msgs.msg import Float64MultiArray
 
+USER_ID=0
+TRIAL_ID=0
 
 LATEST_THETA=np.ones((20,1))
 LATEST_HOMO_MATRIX=None
@@ -74,7 +77,7 @@ def main():
     term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
 
     # MPC for trajectory generation
-    phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.2,ref_axis=np.array([1,0,0]),num_q=10,
+    phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.15,ref_axis=np.array([1,0,0]),num_q=10,
                                 z_min=0.1,z_max=1.2, num_z=10, bias=-0.8, epsilon_z=9, epsilon_q=1.8,z_factor=0.05,mode='cumulative')
 
     # phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.2,ref_axis=np.array([1,0,0]),num_q=10,
@@ -102,6 +105,10 @@ def main():
 
     mve_calc = mvesolver('arm_mve', theta_dim)
     mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)
+
+    logger_path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','user_study_arm_realworld'
+                         ,"user_"+str(USER_ID),'trial_'+str(TRIAL_ID))
+    logger = Realtime_Logger(user=USER_ID,trail=TRIAL_ID,dir=logger_path)
 
     #loop
 
@@ -141,6 +148,9 @@ def main():
             correction[0:2]=0
             correction[2]*=10
             print('correction',correction)
+            corr_msg = np.array2string(correction,precision=3)
+            logger.log_correction(corr_msg + '\n')
+
             human_corr_e=np.concatenate([correction.reshape(-1, 1), np.zeros((6 * (Horizon - 1), 1))])
             h, b, h_phi, b_phi = hb_calculator.calc_planes(LATEST_THETA, corr_state, controller.opt_traj,
                                                                    human_corr=human_corr_e,

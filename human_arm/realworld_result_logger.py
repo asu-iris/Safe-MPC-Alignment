@@ -15,11 +15,11 @@ if __name__=='__main__':
             res=False
         else:
             print("invalid result")
-            continue
+            break
 
         f=None
         try:
-            path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','user_study_arm_real'
+            path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','user_study_arm_realworld'
                          ,"user_"+str(user_id),'trial_'+str(trial_id))
             f=open(os.path.join(path,'result.txt'),"w")
             f.write(str(res))

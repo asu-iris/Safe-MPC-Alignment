@@ -25,7 +25,7 @@ from utils.user_study_logger import UserLogger
 
 #Configuration of log directory
 USER_ID=0
-TRAIL_ID=0
+TRIAL_ID=0
 
 
 def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visualizer, logger=None, recorder=None, filter=None):
@@ -176,8 +176,8 @@ mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)
 
 # logger
 logger_path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','user_study_arm_mj'
-                         ,"user_"+str(USER_ID),'trial_'+str(TRAIL_ID))
-logger = UserLogger(user=USER_ID,trail=TRAIL_ID,dir=logger_path)
+                         ,"user_"+str(USER_ID),'trial_'+str(TRIAL_ID))
+logger = UserLogger(user=USER_ID,trail=TRIAL_ID,dir=logger_path)
 
 flag, cnt, weights = mainloop(learned_theta=learned_theta,
          arm_env=env,
