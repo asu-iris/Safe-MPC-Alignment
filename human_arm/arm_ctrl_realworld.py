@@ -63,7 +63,7 @@ def main():
     dyn_f = arm_model.get_dyn_f()
     step_cost_vec = np.array([0.8,0.0,30.0,30.0,1.0,0.85]) * 1e0 #param:[kr,kq,kvx,kvy,kvz,kw]
     step_cost_f = arm_model.get_step_cost_param_sep(step_cost_vec)
-    term_cost_vec = np.array([8,6]) * 1e1
+    term_cost_vec = np.array([8,8]) * 1e1
     term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
 
     phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.15,ref_axis=np.array([1,0,0]),num_q=10,

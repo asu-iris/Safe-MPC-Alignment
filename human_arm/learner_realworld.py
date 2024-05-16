@@ -19,8 +19,16 @@ from utils.user_study_logger import UserLogger,Realtime_Logger
 import rospy
 from std_msgs.msg import Float64MultiArray
 
-USER_ID=0
-TRIAL_ID=0
+import argparse
+
+parser = argparse.ArgumentParser(description='Parser for User and Trial IDs')
+parser.add_argument('-u','--user_id',help='User ID',default=0)
+parser.add_argument('-t','--trial_id',help='Trial ID',default=0)
+args = parser.parse_args()
+
+USER_ID=args.user_id
+TRIAL_ID=args.trial_id
+MAX_CORR_NUM=15
 
 LATEST_THETA=np.ones((20,1))
 LATEST_HOMO_MATRIX=None
@@ -73,7 +81,7 @@ def main():
     dyn_f = arm_model.get_dyn_f()
     step_cost_vec = np.array([0.8,0.0,30.0,30.0,1.0,0.85]) * 1e0 #param:[kr,kq,kvx,kvy,kvz,kw]
     step_cost_f = arm_model.get_step_cost_param_sep(step_cost_vec)
-    term_cost_vec = np.array([8,6]) * 1e1
+    term_cost_vec = np.array([8,8]) * 1e1
     term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
 
     # MPC for trajectory generation
@@ -111,12 +119,13 @@ def main():
     logger = Realtime_Logger(user=USER_ID,trail=TRIAL_ID,dir=logger_path)
 
     #loop
-
+    corr_num=0
     while not rospy.is_shutdown():
         corr_pose=None
         corr_mat=None
         correction=None
         process_flag=False
+
         # lock
         ros_lock_1.acquire()
         if CORR_FLAG:
@@ -129,9 +138,15 @@ def main():
         ros_lock_1.release()
 
         if process_flag:
+
+            corr_num+=1
+            if corr_num>MAX_CORR_NUM:
+                print("maximum number of correction reached \a")
+                return -1
+            
             corr_quat=Rot_Quat(corr_mat).full().reshape(-1,1)
-            print('pos',corr_pose.flatten())
-            print('quat',corr_quat.flatten())
+            #print('pos',corr_pose.flatten())
+            #print('quat',corr_quat.flatten())
             corr_state=np.concatenate((corr_pose,corr_quat),axis=0)
 
             #Update Theta
@@ -142,13 +157,16 @@ def main():
             try:
                 controller.control(corr_state, weights=LATEST_THETA, target_x=target_x)
             except:
-                print("error in controller: learner stop")
+                print("error in controller: learner stop \a")
                 return -1
             
             correction[0:2]=0
             correction[2]*=10
-            print('correction',correction)
+            correction[4:6]=0
+            
             corr_msg = np.array2string(correction,precision=3)
+            print('correction',corr_msg)
+
             logger.log_correction(corr_msg + '\n')
 
             human_corr_e=np.concatenate([correction.reshape(-1, 1), np.zeros((6 * (Horizon - 1), 1))])
@@ -159,9 +177,9 @@ def main():
             mve_calc.add_constraint(h_phi, b_phi[0])
             try:
                 LATEST_THETA, C = mve_calc.solve()
-                print('theta',LATEST_THETA.flatten())
+                print('theta',np.array2string(LATEST_THETA.flatten(),precision=3))
             except:
-                print("error in mve solver: learner stop")
+                print("error in mve solver: learner stop \a")
                 return -1
 
         
