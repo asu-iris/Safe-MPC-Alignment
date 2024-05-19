@@ -24,9 +24,15 @@ from utils.recorder import Recorder_sync
 import mujoco
 
 #Configuration of log directory
-USER_ID=0
-TRIAL_ID=0
+import argparse
 
+parser = argparse.ArgumentParser(description='Parser for User and Trial IDs')
+parser.add_argument('-u','--user_id',help='User ID',default=0)
+parser.add_argument('-t','--trial_id',help='Trial ID',default=0)
+args = parser.parse_args()
+
+USER_ID=args.user_id
+TRIAL_ID=args.trial_id
 
 def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visualizer, logger=None, recorder=None):
     global PAUSE, MSG

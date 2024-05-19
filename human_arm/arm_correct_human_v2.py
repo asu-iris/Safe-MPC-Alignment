@@ -24,8 +24,15 @@ from utils.recorder import Recorder_Arm
 from utils.user_study_logger import UserLogger
 
 #Configuration of log directory
-USER_ID=0
-TRIAL_ID=0
+import argparse
+
+parser = argparse.ArgumentParser(description='Parser for User and Trial IDs')
+parser.add_argument('-u','--user_id',help='User ID',default=0)
+parser.add_argument('-t','--trial_id',help='Trial ID',default=0)
+args = parser.parse_args()
+
+USER_ID=args.user_id
+TRIAL_ID=args.trial_id
 
 
 def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visualizer, logger=None, recorder=None, filter=None):
@@ -112,7 +119,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     time.sleep(0.2)
 
         #print(env.get_curr_joints())
-        print(env.get_site_pos())
+        #print(env.get_site_pos())
 
 
 # list for msg passing
