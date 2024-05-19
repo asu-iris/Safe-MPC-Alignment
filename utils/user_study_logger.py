@@ -4,7 +4,7 @@ import numpy as np
 
 class UserLogger(object):
     def __init__(self,user=0,trail=0,dir=os.path.abspath(os.getcwd())) -> None:
-        self.filename='log_user_'+str(user)+'_trail_'+str(trail)+'.txt'
+        self.filename='log_user_'+str(user)+'_trial_'+str(trail)+'.txt'
         self.dir=dir
         self.filepath=os.path.join(self.dir,self.filename)
         if not os.path.exists(self.dir):
@@ -22,11 +22,27 @@ class UserLogger(object):
                     filemode='w')
         
     def log_correction(self,msg):
-        logging.info(msg)
+        self.logger.info(msg)
+        #logging.info(msg)
 
     def log_termination(self,flag,cnt_corr,weights):
         message=str(flag)+'_'+str(cnt_corr)
-        logging.info(msg=message)
+        self.logger.info(message)
+        #logging.info(msg=message)
         np.save(os.path.join(self.dir,'weights.npy'),weights)
 
+class Realtime_Logger(object):
+    def __init__(self,user=0,trail=0,dir=os.path.abspath(os.getcwd())):
+        self.filename='log_user_'+str(user)+'_trial_'+str(trail)+'.txt'
+        self.dir=dir
+        self.filepath=os.path.join(self.dir,self.filename)
+        if not os.path.exists(self.dir):
+            os.makedirs(self.dir)
+
+        open(self.filepath, 'w').close()
+
+    def log_correction(self,msg):
+        f=open(self.filepath,"a")
+        f.write(msg)
+        f.close()
 

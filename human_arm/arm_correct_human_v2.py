@@ -21,6 +21,12 @@ from utils.filter import LowPassFilter_Vel
 import mujoco
 
 from utils.recorder import Recorder_Arm
+from utils.user_study_logger import UserLogger
+
+#Configuration of log directory
+USER_ID=0
+TRIAL_ID=0
+
 
 def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visualizer, logger=None, recorder=None, filter=None):
     global PAUSE, MSG
@@ -40,6 +46,9 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
         arm_env.reset_env()
         controller.reset_warmstart()
         #print(env.get_site_pos())
+
+        human_corr_str = None
+
         for i in range(400):
             if not PAUSE[0]:
                 if MSG[0]:
@@ -81,7 +90,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     print('vol', np.log(np.linalg.det(C)))
 
                     num_corr += 1
-                    #logger.log_correction(human_corr_str)
+                    logger.log_correction(human_corr_str)
                     time.sleep(0.1)
                 
                 # simulation
@@ -104,6 +113,8 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
 
         #print(env.get_curr_joints())
         print(env.get_site_pos())
+
+
 # list for msg passing
 PAUSE = [False]
 MSG = [None]
@@ -164,11 +175,19 @@ mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)
 #rec=Recorder_Arm(env)
 #rec.record_mj()
 
-filter=None
-mainloop(learned_theta=learned_theta,
+# logger
+logger_path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','user_study_arm_mj'
+                         ,"user_"+str(USER_ID),'trial_'+str(TRIAL_ID))
+logger = UserLogger(user=USER_ID,trail=TRIAL_ID,dir=logger_path)
+
+flag, cnt, weights = mainloop(learned_theta=learned_theta,
          arm_env=env,
          controller=controller,
          hb_calculator=hb_calculator,
          mve_calc=mve_calc,
          visualizer=visualizer,
-         filter=filter)
+         logger=logger)
+print(flag, cnt)
+logger.log_termination(flag, cnt,weights)
+#recorder.write()
+sys.exit()

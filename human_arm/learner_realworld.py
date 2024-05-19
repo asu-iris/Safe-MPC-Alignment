@@ -14,10 +14,21 @@ from Solvers.MVEsolver import mvesolver
 from utils.RBF import generate_rbf_quat_z
 import numpy as np
 
+from utils.user_study_logger import UserLogger,Realtime_Logger
 
 import rospy
 from std_msgs.msg import Float64MultiArray
 
+import argparse
+
+parser = argparse.ArgumentParser(description='Parser for User and Trial IDs')
+parser.add_argument('-u','--user_id',help='User ID',default=0)
+parser.add_argument('-t','--trial_id',help='Trial ID',default=0)
+args = parser.parse_args()
+
+USER_ID=args.user_id
+TRIAL_ID=args.trial_id
+MAX_CORR_NUM=15
 
 LATEST_THETA=np.ones((20,1))
 LATEST_HOMO_MATRIX=None
@@ -28,7 +39,7 @@ LATEST_TARGET = np.array([-0.65,-0.5,0.5,0.0,-0.707,0.0,0.707])
 #lock 1: correction data
 #lock 2: target position
 ros_lock_1=threading.Lock()
-ros_lock_2=threading.Lock()
+#ros_lock_2=threading.Lock()
 
 def listener_correction(data):
     global LATEST_HOMO_MATRIX,LATEST_CORR,CORR_FLAG
@@ -43,13 +54,13 @@ def listener_correction(data):
 
     # rospy.loginfo(rospy.get_caller_id() + "I heard %s", data)
 
-def listener_target(data):
-    global LATEST_TARGET
-    ros_lock_2.acquire()
-    LATEST_TARGET=np.array(data.data)
-    #print('target',LATEST_TARGET)
-    # unlock
-    ros_lock_2.release()
+# def listener_target(data):
+#     global LATEST_TARGET
+#     ros_lock_2.acquire()
+#     LATEST_TARGET=np.array(data.data)
+#     #print('target',LATEST_TARGET)
+#     # unlock
+#     ros_lock_2.release()
     
 
     
@@ -58,29 +69,29 @@ def main():
     # ros utils
     rospy.init_node('learner', anonymous=True)
     rospy.Subscriber("human_correction", Float64MultiArray, listener_correction, queue_size=100)
-    rospy.Subscriber("target_x", Float64MultiArray, listener_target, queue_size=100)
+    #rospy.Subscriber("target_x", Float64MultiArray, listener_target, queue_size=100)
 
     theta_pub = rospy.Publisher('theta', Float64MultiArray, queue_size=10)
     rate = rospy.Rate(10) #hz
 
     # Model
     dt=0.1
-    Horizon=10
+    Horizon=20
     arm_model=End_Effector_model(dt=dt)
     dyn_f = arm_model.get_dyn_f()
     step_cost_vec = np.array([0.8,0.0,30.0,30.0,1.0,0.85]) * 1e0 #param:[kr,kq,kvx,kvy,kvz,kw]
     step_cost_f = arm_model.get_step_cost_param_sep(step_cost_vec)
-    term_cost_vec = np.array([8,6]) * 1e1
+    term_cost_vec = np.array([8,8]) * 1e1
     term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
 
     # MPC for trajectory generation
-    phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.2,ref_axis=np.array([1,0,0]),num_q=10,
+    phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.15,ref_axis=np.array([1,0,0]),num_q=10,
                                 z_min=0.1,z_max=1.2, num_z=10, bias=-0.8, epsilon_z=9, epsilon_q=1.8,z_factor=0.05,mode='cumulative')
 
     # phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.2,ref_axis=np.array([1,0,0]),num_q=10,
     #                             z_min=0.1,z_max=1.2, num_z=5, bias=-0.8, epsilon_z=7, epsilon_q=1.8,z_factor=0.1,mode='cumulative')
     
-    Gamma=1.0 #
+    Gamma=1.5 #
 
     controller = ocsolver_v4('learner controller')
     controller.set_state_param(7, None, None)
@@ -103,13 +114,18 @@ def main():
     mve_calc = mvesolver('arm_mve', theta_dim)
     mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)
 
-    #loop
+    logger_path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','user_study_arm_realworld'
+                         ,"user_"+str(USER_ID),'trial_'+str(TRIAL_ID))
+    logger = Realtime_Logger(user=USER_ID,trail=TRIAL_ID,dir=logger_path)
 
+    #loop
+    corr_num=0
     while not rospy.is_shutdown():
         corr_pose=None
         corr_mat=None
         correction=None
         process_flag=False
+
         # lock
         ros_lock_1.acquire()
         if CORR_FLAG:
@@ -122,20 +138,37 @@ def main():
         ros_lock_1.release()
 
         if process_flag:
+
+            corr_num+=1
+            if corr_num>MAX_CORR_NUM:
+                print("maximum number of correction reached \a")
+                return -1
+            
             corr_quat=Rot_Quat(corr_mat).full().reshape(-1,1)
-            print('pos',corr_pose.flatten())
-            print('quat',corr_quat.flatten())
+            #print('pos',corr_pose.flatten())
+            #print('quat',corr_quat.flatten())
             corr_state=np.concatenate((corr_pose,corr_quat),axis=0)
 
-            # TODO Update Theta
-            ros_lock_2.acquire()
+            #Update Theta
+            #ros_lock_2.acquire()
             target_x=np.array(LATEST_TARGET)
-            ros_lock_2.release()
+            #ros_lock_2.release()
             
-            controller.control(corr_state, weights=LATEST_THETA, target_x=target_x)
+            try:
+                controller.control(corr_state, weights=LATEST_THETA, target_x=target_x)
+            except:
+                print("error in controller: learner stop \a")
+                return -1
+            
             correction[0:2]=0
             correction[2]*=10
-            print('correction',correction)
+            correction[4:6]=0
+            
+            corr_msg = np.array2string(correction,precision=3)
+            print('correction',corr_msg)
+
+            logger.log_correction(corr_msg + '\n')
+
             human_corr_e=np.concatenate([correction.reshape(-1, 1), np.zeros((6 * (Horizon - 1), 1))])
             h, b, h_phi, b_phi = hb_calculator.calc_planes(LATEST_THETA, corr_state, controller.opt_traj,
                                                                    human_corr=human_corr_e,
@@ -144,9 +177,9 @@ def main():
             mve_calc.add_constraint(h_phi, b_phi[0])
             try:
                 LATEST_THETA, C = mve_calc.solve()
-                print('theta',LATEST_THETA.flatten())
+                print('theta',np.array2string(LATEST_THETA.flatten(),precision=3))
             except:
-                print('abort: mvesolver crash')
+                print("error in mve solver: learner stop \a")
                 return -1
 
         

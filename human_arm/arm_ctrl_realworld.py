@@ -42,7 +42,7 @@ def listener_learner(data):
     ros_lock_2.acquire()
     LATEST_THETA_CTRL = np.array(data.data)
     ros_lock_2.release()
-    print('theta for ctrl', LATEST_THETA_CTRL.flatten())
+    #print('theta for ctrl', LATEST_THETA_CTRL.flatten())
 
 
 def main():
@@ -58,22 +58,22 @@ def main():
 
     #mpc utils
     dt=0.1
-    Horizon=10
+    Horizon=20
     arm_model=End_Effector_model(dt=dt)
     dyn_f = arm_model.get_dyn_f()
     step_cost_vec = np.array([0.8,0.0,30.0,30.0,1.0,0.85]) * 1e0 #param:[kr,kq,kvx,kvy,kvz,kw]
     step_cost_f = arm_model.get_step_cost_param_sep(step_cost_vec)
-    term_cost_vec = np.array([8,6]) * 1e1
+    term_cost_vec = np.array([8,8]) * 1e1
     term_cost_f = arm_model.get_terminal_cost_param(term_cost_vec)
 
-    phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.2,ref_axis=np.array([1,0,0]),num_q=10,
+    phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.15,ref_axis=np.array([1,0,0]),num_q=10,
                                 z_min=0.1,z_max=1.2, num_z=10, bias=-0.8, epsilon_z=9, epsilon_q=1.8,z_factor=0.05,mode='cumulative')
     
     # phi_func =  generate_rbf_quat_z(Horizon,x_center=-0.15,x_half=0.2,ref_axis=np.array([1,0,0]),num_q=10,
     #                             z_min=0.1,z_max=1.2, num_z=5, bias=-0.8, epsilon_z=7, epsilon_q=1.8,z_factor=0.1,mode='cumulative')
 
 
-    Gamma=1.0 #1.0
+    Gamma=1.5 #1.0
 
     controller = ocsolver_v4('arm control')
     controller.set_state_param(7, None, None)
@@ -104,8 +104,9 @@ def main():
 
         if process_flag:
             latest_quat=Rot_Quat(latest_mat).full().reshape(-1,1)
-            #print('pos',latest_pose.flatten())
-            #print('quat',latest_quat.flatten())
+            print('pos',latest_pose.flatten())
+            print('quat',latest_quat.flatten())
+            
             curr_mpc_state=np.concatenate((latest_pose,latest_quat),axis=0)
 
             ros_lock_2.acquire()
@@ -118,7 +119,8 @@ def main():
             except:
                 vel_command_raw = np.zeros(6)
                 print('error in control')
-            
+            print('cmd',vel_command_raw)
+            print('----------------------------------')
             #print(vel_command_raw)
             cmd_msg=Float64MultiArray(data=vel_command_raw)
             #cmd_msg.data=vel_command_raw
