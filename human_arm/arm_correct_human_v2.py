@@ -58,6 +58,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     if MSG[0] == 'reset':
                         MSG[0] = None
                         #recorder.record(True, 'reset')
+                        print('one target result',arm_env.examine_success())
                         break
                     human_corr = arm_key_interface_v2(MSG)
                     human_corr_str = MSG[0]

@@ -173,20 +173,13 @@ class EFFECTOR_env_mj(object):
 
         self.last_ang_vel=np.zeros((7,1))
 
-        # ini_joint=np.zeros(8)
-        # ini_joint[0]=-1.8
-        # ini_joint[1]= 0.405
-        # ini_joint[2]=-0.348
-        # ini_joint[3]=-1.39
-        # ini_joint[4]=-1.65
-        # ini_joint[5]=2.15
-        # ini_joint[6]=-0.55
-        # ini_joint=np.array([-1.58753662,-0.31941105,-0.81050407,-2.28855788,-2.17938154,2.16288644,-0.20836714,0])
         self.ini_joint=INI_JOINT_2
-        #ini_joint=np.array([-1.40675402,0.08373927,-1.24319759,-1.97988368,-2.18859521,2.52699744,0.01613408,0])
+        
+        self.traj_x=[]
         self.set_init_state_v(self.ini_joint)
 
     def reset_env(self):
+        self.traj_x=[]
         self.set_init_state_v(self.ini_joint)
 
     def set_init_state_v(self, x: np.ndarray):
@@ -196,6 +189,7 @@ class EFFECTOR_env_mj(object):
         self.data.ctrl = np.zeros(8)
         for i in range(100):
             mujoco.mj_step(self.model, self.data)
+        self.traj_x.append(self.get_curr_state().flatten())
 
     def step(self, u):  # u:speed in end effector
         u=np.array(u)
@@ -216,6 +210,7 @@ class EFFECTOR_env_mj(object):
         for i in range(loop_num):
             mujoco.mj_step(self.model, self.data)
             #print(self.data.qpos[1])
+        self.traj_x.append(self.get_curr_state().flatten())
 
     def get_curr_joints(self):
         return self.data.qpos[0:7].copy()
@@ -250,6 +245,18 @@ class EFFECTOR_env_mj(object):
         quat=self.get_site_quat().reshape(-1,1)
         x=np.concatenate((pos,quat),axis=0)
         return x
+    
+    def examine_success(self,x_center=-0.15,min_h=0.35,max_h=0.50,target_quat=np.array([0.270557, -0.653183, -0.270557, 0.653183]),q_thresh=0.05):
+        tmp_traj_x=np.array(self.traj_x)
+        seq_x=tmp_traj_x[:,0]
+        mid_idx=np.argmin(np.abs(seq_x-x_center))
+        mid_z=self.traj_x[mid_idx][2]
+        mid_quat=self.traj_x[mid_idx][3:]
+        print('mid z',mid_z)
+        print('mid_quat diff',q_dist(mid_quat,target_quat))
+        succ_flag=bool(mid_z<max_h and mid_z>min_h) and bool(q_dist(mid_quat,target_quat)<q_thresh)
+        return succ_flag
+
     
 def Rot_x(alpha):
     return cd.vertcat(
