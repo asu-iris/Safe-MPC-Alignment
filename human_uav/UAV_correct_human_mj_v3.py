@@ -37,7 +37,10 @@ TRIAL_ID=args.trial_id
 def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visualizer, logger=None, recorder=None):
     global PAUSE, MSG
     num_corr = 0
+
     target_idx=0
+    traj_idx=0
+
     while True:
 
         print('current theta:', learned_theta)
@@ -59,8 +62,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
 
         target_r_set = [np.array([19, 1, 9]), np.array([19, 5, 9]), np.array([19, 9, 9])]
         target_r=target_r_set[target_idx]
-        target_idx+=1
-        target_idx%=3
+
         print('target_r', target_r)
         visualizer.set_target_pos(target_r)
 
@@ -76,11 +78,13 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                     # print('message ',MSG[0])
                     if MSG[0] == 'quit':
                         MSG[0] = None
+                        logger.log_trajectory(uav_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
                         visualizer.close_window()
                         return True, num_corr ,learned_theta
 
                     if MSG[0] == 'fail':
                         MSG[0] = None
+                        logger.log_trajectory(uav_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
                         visualizer.close_window()
                         return False, num_corr ,learned_theta
 
@@ -135,6 +139,10 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
             else:
                 while PAUSE[0]:
                     time.sleep(0.2)
+        
+        logger.log_trajectory(uav_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
+        traj_idx+=1
+        target_idx=(target_idx+1)%3
 
 
 # list for msg passing

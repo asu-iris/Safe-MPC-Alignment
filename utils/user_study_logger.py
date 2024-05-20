@@ -25,11 +25,15 @@ class UserLogger(object):
         self.logger.info(msg)
         #logging.info(msg)
 
+    def log_trajectory(self,trajectory,traj_id):
+        np.save(os.path.join(self.dir,'trajectory_'+str(traj_id)+'.npy'),trajectory)
+
     def log_termination(self,flag,cnt_corr,weights):
         message=str(flag)+'_'+str(cnt_corr)
         self.logger.info(message)
         #logging.info(msg=message)
         np.save(os.path.join(self.dir,'weights.npy'),weights)
+            
 
 class Realtime_Logger(object):
     def __init__(self,user=0,trail=0,dir=os.path.abspath(os.getcwd())):

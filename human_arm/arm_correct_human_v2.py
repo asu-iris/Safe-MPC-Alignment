@@ -44,11 +44,10 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
     #target_quat=[-0.36,0.6,0.36,-0.6]
     
     target_idx=0
+    traj_idx=0
 
     while True:
         target_x=target_pos_list[target_idx]+target_quat
-        target_idx=(target_idx+1)%3
-
         print('current theta:', learned_theta)
         arm_env.reset_env()
         controller.reset_warmstart()
@@ -63,11 +62,13 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     # print('message ',MSG[0])
                     if MSG[0] == 'quit':
                         MSG[0] = None
+                        logger.log_trajectory(arm_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
                         visualizer.close_window()
                         return True, num_corr ,learned_theta
 
                     if MSG[0] == 'fail':
                         MSG[0] = None
+                        logger.log_trajectory(arm_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
                         visualizer.close_window()
                         return False, num_corr ,learned_theta
 
@@ -120,6 +121,9 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
 
         #print(env.get_curr_joints())
         #print(env.get_site_pos())
+        logger.log_trajectory(arm_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
+        traj_idx+=1
+        target_idx=(target_idx+1)%3
 
 
 # list for msg passing

@@ -450,6 +450,9 @@ class UAV_env_mj(object):
 
         return np.concatenate([x, v, q, w]).reshape(-1, 1)
 
+    def get_traj_arr(self):
+        return np.array(self.x_traj)
+    
     def clear_traj(self):
         self.x_traj = []
         self.u_traj = []
