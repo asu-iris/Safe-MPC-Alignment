@@ -48,6 +48,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
 
     while True:
         target_x=target_pos_list[target_idx]+target_quat
+        visualizer.set_target_pos(target_pos_list[target_idx])
         print('current theta:', learned_theta)
         arm_env.reset_env()
         controller.reset_warmstart()

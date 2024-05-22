@@ -149,7 +149,7 @@ class uav_visualizer_mj_v3(uav_visualizer_mj_v2):
 
     def render_update(self):
         self.plot_target()
-        self.viewer.sync()
+        #self.viewer.sync()
         #print(self.scene.geoms[self.scene.ngeom-1].pos)
         super().render_update()
         
@@ -253,10 +253,29 @@ class arm_visualizer_mj_v1(object):
 
     def render_init(self):
         self.viewer=mujoco.viewer.launch_passive(self.env.model, self.env.data)
+        #init geom for target
+        self.scene=self.viewer.user_scn
+        self.scene.ngeom=0
+        self.scene.ngeom+=1
+        mujoco.mjv_initGeom(
+            self.scene.geoms[self.scene.ngeom-1],
+            type=mujoco.mjtGeom.mjGEOM_SPHERE,
+            size=[0.02, 0, 0],
+            pos=-10*np.ones(3),
+            mat=np.eye(3).flatten(),
+            rgba=np.array([0, 1, 1, 1])
+        )
 
     def render_update(self):
+        self.plot_target()
         self.viewer.sync()
+
+    def set_target_pos(self,target_pos):
+        self.target_pos=target_pos
     
+    def plot_target(self):
+        self.scene.geoms[self.scene.ngeom-1].pos=self.target_pos
+
     def close_window(self):
         self.viewer.close()
         print('window closed')
