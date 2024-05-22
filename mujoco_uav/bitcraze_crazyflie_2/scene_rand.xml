@@ -29,9 +29,9 @@
     <site name="y_axis" size="0.005" type="cylinder" fromto="0 0 0 0 1 0" rgba="0 1 0 1"/>  <!-- Y-axis: Green -->
     <site name="z_axis" size="0.005" type="cylinder" fromto="0 0 0 0 0 1" rgba="0 0 1 1"/>  <!-- Z-axis: Blue -->
 
-    <geom name="bar_1" size="0.05" type="cylinder" fromto="10 3.5 4 10 3.5 5.2" rgba="1 0.8 0 1"/>
-    <geom name="bar_2" size="0.05" type="cylinder" fromto="10 3.5 5.2 10 6.5 5.2" rgba="1 0.8 0 1"/>
-    <geom name="bar_3" size="0.05" type="cylinder" fromto="10 6.5 5.2 10 6.5 4" rgba="1 0.8 0 1"/>
+    <geom name="bar_1" size="0.05" type="cylinder" fromto="10 3.5 4 10 3.5 5.4" rgba="1 0.8 0 1"/>
+    <geom name="bar_2" size="0.05" type="cylinder" fromto="10 3.5 5.4 10 6.5 5.4" rgba="1 0.8 0 1"/>
+    <geom name="bar_3" size="0.05" type="cylinder" fromto="10 6.5 5.4 10 6.5 4" rgba="1 0.8 0 1"/>
     <geom name="bar_4" size="0.05" type="cylinder" fromto="10 6.5 4 10 3.5 4" rgba="1 0.8 0 1"/>
 
     <geom name="bar_5" size="0.05" type="cylinder" fromto="10 0 0 10 10 0" rgba="1 0.2 0 0.6"/>
@@ -41,8 +41,8 @@
 
     <geom name="bar_9" size="0.05" type="cylinder" fromto="10 0 0 10 3.5 4" rgba="1 0.4 0 0.6"/>
     <geom name="bar_10" size="0.05" type="cylinder" fromto="10 10 0 10 6.5 4" rgba="1 0.4 0 0.6"/>
-    <geom name="bar_11" size="0.05" type="cylinder" fromto="10 10 10 10 6.5 5.2" rgba="1 0.4 0 0.6"/>
-    <geom name="bar_12" size="0.05" type="cylinder" fromto="10 0 10 10 3.5 5.2" rgba="1 0.4 0 0.6"/>
+    <geom name="bar_11" size="0.05" type="cylinder" fromto="10 10 10 10 6.5 5.4" rgba="1 0.4 0 0.6"/>
+    <geom name="bar_12" size="0.05" type="cylinder" fromto="10 0 10 10 3.5 5.4" rgba="1 0.4 0 0.6"/>
 
     <!-- <geom name="wall_1" size="0.05 1.75 5" type="box" pos="10 1.75 5" rgba="0.5 0.5 0.5 0.5"/>
     <geom name="wall_2" size="0.05 1.75 5" type="box" pos="10 8.25 5" rgba="0.5 0.5 0.5 0.5"/>
