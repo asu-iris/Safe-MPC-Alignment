@@ -78,13 +78,13 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                     # print('message ',MSG[0])
                     if MSG[0] == 'quit':
                         MSG[0] = None
-                        logger.log_trajectory(uav_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
+                        logger.log_trajectory(uav_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx)+'_cnum_'+str(num_corr))
                         visualizer.close_window()
                         return True, num_corr ,learned_theta
 
                     if MSG[0] == 'fail':
                         MSG[0] = None
-                        logger.log_trajectory(uav_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
+                        logger.log_trajectory(uav_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx)+'_cnum_'+str(num_corr))
                         visualizer.close_window()
                         return False, num_corr ,learned_theta
 
@@ -140,7 +140,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                 while PAUSE[0]:
                     time.sleep(0.2)
         
-        logger.log_trajectory(uav_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
+        logger.log_trajectory(uav_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx)+'_cnum_'+str(num_corr))
         traj_idx+=1
         target_idx=(target_idx+1)%3
 

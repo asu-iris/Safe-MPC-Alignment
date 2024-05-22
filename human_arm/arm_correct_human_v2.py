@@ -45,6 +45,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
     
     target_idx=0
     traj_idx=0
+    corr_num=0
 
     while True:
         target_x=target_pos_list[target_idx]+target_quat
@@ -55,6 +56,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
         #print(env.get_site_pos())
 
         human_corr_str = None
+        
 
         for i in range(400):
             if not PAUSE[0]:
@@ -63,13 +65,13 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     # print('message ',MSG[0])
                     if MSG[0] == 'quit':
                         MSG[0] = None
-                        logger.log_trajectory(arm_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
+                        logger.log_trajectory(arm_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx)+'_cnum_'+str(corr_num))
                         visualizer.close_window()
                         return True, num_corr ,learned_theta
 
                     if MSG[0] == 'fail':
                         MSG[0] = None
-                        logger.log_trajectory(arm_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
+                        logger.log_trajectory(arm_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx)+'_cnum_'+str(corr_num))
                         visualizer.close_window()
                         return False, num_corr ,learned_theta
 
@@ -83,6 +85,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     MSG[0] = None
 
                     print('correction', human_corr)
+                    corr_num+=1
                     human_corr_e = np.concatenate([human_corr.reshape(-1, 1), np.zeros((6 * (Horizon - 1), 1))])
                     h, b, h_phi, b_phi = hb_calculator.calc_planes(learned_theta, x, controller.opt_traj,
                                                                    human_corr=human_corr_e,
@@ -122,7 +125,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
 
         #print(env.get_curr_joints())
         #print(env.get_site_pos())
-        logger.log_trajectory(arm_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx))
+        logger.log_trajectory(arm_env.get_traj_arr(),str(traj_idx)+'_target_'+str(target_idx)+'_cnum_'+str(corr_num))
         traj_idx+=1
         target_idx=(target_idx+1)%3
 
