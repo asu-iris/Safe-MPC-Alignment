@@ -11,6 +11,7 @@ import mujoco
 import mujoco.viewer
 
 import time
+import cv2
 
 class uav_visualizer_mj(object):
     def __init__(self,env:UAV_env,controller:ocsolver_v2=None) -> None:
@@ -156,36 +157,93 @@ class uav_visualizer_mj_v3(uav_visualizer_mj_v2):
     def plot_target(self):
         self.scene.geoms[self.scene.ngeom-1].pos=self.target_pos
 
-class uav_visualizer_mj_v3(uav_visualizer_mj_v2):
+class uav_visualizer_mj_v4(uav_visualizer_mj_v3):
     def __init__(self, env: UAV_env_mj, controller: ocsolver_v3 = None) -> None:
         super().__init__(env, controller)
 
     def render_init(self):
         super().render_init()
-        # register target ball
-        self.scene.ngeom+=1
+        self.renderer=mujoco.Renderer(self.env.model, 480, 640)
+        self.renderer.update_scene(self.env.data, "cam_aux")
+        
+        self.scene_aux=self.renderer.scene
+        self.default_ngeom=self.scene_aux.ngeom
+
+        #initialize MPC trajectory in aux renderer
+        for i in range(self.default_ngeom,self.default_ngeom+self.mpc_horizon-1):
+            self.scene_aux.ngeom+=1
+            mujoco.mjv_initGeom(
+                self.scene_aux.geoms[i],
+                type=mujoco.mjtGeom.mjGEOM_LINE,
+                size=np.zeros(3),
+                pos=np.zeros(3),
+                mat=np.eye(3).flatten(),
+                rgba=0.5*np.array([1, 0, 0.5, 1])
+            )
+
+        # register target ball in aux renderer
+        self.scene_aux.ngeom+=1
         mujoco.mjv_initGeom(
-            self.scene.geoms[self.scene.ngeom-1],
+            self.scene_aux.geoms[self.scene_aux.ngeom-1],
             type=mujoco.mjtGeom.mjGEOM_SPHERE,
             size=[0.2, 0, 0],
             pos=-10*np.ones(3),
             mat=np.eye(3).flatten(),
             rgba=np.array([0, 0, 1, 1])
         )
-        print(self.scene.ngeom)
+        print(self.scene_aux.ngeom)
 
-    def set_target_pos(self,target_pos):
-        self.target_pos=target_pos
+    def plot_target_aux(self):
+        self.scene_aux.ngeom+=1
+        mujoco.mjv_initGeom(
+            self.scene_aux.geoms[self.scene_aux.ngeom-1],
+            type=mujoco.mjtGeom.mjGEOM_SPHERE,
+            size=[0.2, 0, 0],
+            pos=-10*np.ones(3),
+            mat=np.eye(3).flatten(),
+            rgba=np.array([0, 0, 1, 1])
+        )
+        self.scene_aux.geoms[self.scene_aux.ngeom-1].pos=self.target_pos
 
+    def plot_mpc_traj_aux(self):
+        traj_xu=self.controller.opt_traj
+        traj_plot=[]
+        x_dim=13
+        u_dim=4
+        for i in range(self.mpc_horizon):
+            xyz_pos=traj_xu[i*(x_dim+u_dim):i*(x_dim+u_dim)+3]
+            traj_plot.append(xyz_pos)
+        traj_plot=np.array(traj_plot)
+
+        for i in range(self.default_ngeom,self.default_ngeom+self.mpc_horizon-1):
+            self.scene_aux.ngeom+=1
+            mujoco.mjv_initGeom(
+                self.scene_aux.geoms[i],
+                type=mujoco.mjtGeom.mjGEOM_LINE,
+                size=np.zeros(3),
+                pos=np.zeros(3),
+                mat=np.eye(3).flatten(),
+                rgba=0.5*np.array([1, 0, 0.5, 1])
+            )
+
+        for i in range(self.mpc_horizon-1):
+            mujoco.mjv_makeConnector(self.scene_aux.geoms[self.default_ngeom+i],
+                    mujoco.mjtGeom.mjGEOM_LINE,
+                    10,
+                    traj_plot[i,0],traj_plot[i,1],traj_plot[i,2],
+                    traj_plot[i+1,0],traj_plot[i+1,1],traj_plot[i+1,2])
+            
     def render_update(self):
-        self.plot_target()
-        self.viewer.sync()
-        #print(self.scene.geoms[self.scene.ngeom-1].pos)
         super().render_update()
+        self.renderer.update_scene(self.env.data, "cam_aux")
+        self.plot_mpc_traj_aux()
+        self.plot_target_aux()
+        frame_raw=self.renderer.render() 
+        frame=cv2.cvtColor(frame_raw,cv2.COLOR_RGB2BGR)
+        cv2.imshow('aux_view', frame)
+        k = cv2.waitKey(1)
+        #print(frame.shape)
         
-
-    def plot_target(self):
-        self.scene.geoms[self.scene.ngeom-1].pos=self.target_pos
 
 class arm_visualizer_mj_v1(object):
     def __init__(self,env:ARM_env_mj,controller:ocsolver_v2=None) -> None:

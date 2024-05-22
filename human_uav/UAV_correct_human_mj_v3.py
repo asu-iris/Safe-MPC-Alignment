@@ -17,7 +17,7 @@ from Solvers.Cutter import  cutter_v3
 from Solvers.MVEsolver import mvesolver
 from utils.RBF import generate_phi_rbf, gen_eval_rbf
 
-from utils.Visualize_mj import uav_visualizer_mj_v3
+from utils.Visualize_mj import uav_visualizer_mj_v4
 from utils.Keyboard import uav_key_handler, key_interface, remove_conflict
 from utils.user_study_logger import UserLogger
 from utils.recorder import Recorder_sync
@@ -53,9 +53,9 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
         init_x = np.concatenate([init_r, init_v, init_q, init_w_B], axis=0)
         # init_x[0] = np.random.uniform(1.0, 7.0)
         init_x[0] = 0.1
-        # init_x[1] = np.random.uniform(2.0, 4.0)
+        init_x[1] = np.random.uniform(4.0, 6.0)
         # init_x[2] = np.random.uniform(0.3, 2.0)
-        init_x[1] = 5
+        #init_x[1] = 5
         init_x[2] = 0.5
         # print('init state', init_x.T)
 
@@ -134,7 +134,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                 visualizer.render_update()
 
                 uav_env.step(u)
-                time.sleep(0.05)
+                time.sleep(0.03)
 
             else:
                 while PAUSE[0]:
@@ -201,7 +201,7 @@ controller.construct_prob(horizon=Horizon)
 ######################################################################################
 
 ######################################################################################
-visualizer = uav_visualizer_mj_v3(uav_env, controller=controller)
+visualizer = uav_visualizer_mj_v4(uav_env, controller=controller)
 visualizer.render_init()
 ######################################################################################
 
