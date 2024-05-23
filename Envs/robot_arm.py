@@ -249,7 +249,7 @@ class EFFECTOR_env_mj(object):
     def get_traj_arr(self):
         return np.array(self.traj_x)
     
-    def examine_success(self,x_center=-0.15,min_h=0.37,max_h=0.48,target_quat=np.array([0.270557, -0.653183, -0.270557, 0.653183]),q_thresh=0.05):
+    def examine_success(self,x_center=-0.15,min_h=0.37,max_h=0.48,target_quat=np.array([0.270557, -0.653183, -0.270557, 0.653183]),q_thresh=0.03):
         tmp_traj_x=np.array(self.traj_x)
         seq_x=tmp_traj_x[:,0]
         mid_idx=np.argmin(np.abs(seq_x-x_center))

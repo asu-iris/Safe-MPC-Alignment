@@ -84,7 +84,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     human_corr_str = MSG[0]
                     MSG[0] = None
 
-                    print('correction', human_corr)
+                    #print('correction', human_corr)
                     corr_num+=1
                     human_corr_e = np.concatenate([human_corr.reshape(-1, 1), np.zeros((6 * (Horizon - 1), 1))])
                     h, b, h_phi, b_phi = hb_calculator.calc_planes(learned_theta, x, controller.opt_traj,
@@ -98,8 +98,8 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     except:
                         return False, num_corr ,learned_theta
                     
-                    print('theta', learned_theta)
-                    print('vol', np.log(np.linalg.det(C)))
+                    #print('theta', learned_theta)
+                    #print('vol', np.log(np.linalg.det(C)))
 
                     num_corr += 1
                     logger.log_correction(human_corr_str)

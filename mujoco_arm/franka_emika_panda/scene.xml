@@ -23,8 +23,8 @@
     <site name="y_axis" size="0.005" type="cylinder" fromto="0 0 0 0 0.2 0" rgba="0 1 0 1"/>  <!-- Y-axis: Green -->
     <site name="z_axis" size="0.005" type="cylinder" fromto="0 0 0 0 0 0.2" rgba="0 0 1 1"/>  <!--Z-axis: Blue -->
 
-    <site name="bar_1" size="0.01" type="cylinder" fromto="-0.15 -0.65 0.295 -0.15 -0.35 0.445" rgba="1 0.8 0 1"/>
-    <site name="bar_2" size="0.01" type="cylinder" fromto="-0.15 -0.65 0.405 -0.15 -0.35 0.555" rgba="1 0.8 0 1"/>
+    <site name="bar_1" size="0.01" type="cylinder" fromto="-0.15 -0.65 0.20 -0.15 -0.35 0.50" rgba="1 0.8 0 1"/>
+    <site name="bar_2" size="0.01" type="cylinder" fromto="-0.15 -0.65 0.35 -0.15 -0.35 0.65" rgba="1 0.8 0 1"/>
 
     <camera name="cam_1" pos="0 -2 0.75" fovy="60" xyaxes="1 0 0 0 0.2 1" mode="fixed"/>
   </worldbody>
