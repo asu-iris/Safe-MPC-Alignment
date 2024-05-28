@@ -106,7 +106,7 @@ class Correction_Agent(object):
             end_idx=start_idx+self.u_dim
             self.traj_u+=list(traj_xu[start_idx:end_idx])
         self.traj_u=np.array(self.traj_u)
-        print('g human',self.g_func(init_state,self.traj_u))
+        #print('g human',self.g_func(init_state,self.traj_u))
         #print('ln -g human',np.log(-self.g_func(init_state,self.traj_u)))
         if self.g_func(init_state,self.traj_u) >=0:
             return None
@@ -114,10 +114,10 @@ class Correction_Agent(object):
             return True
         else:
             if np.random.uniform(0,1)<self.p:
-                print('agent correction')
+                #print('agent correction')
                 return self.correct(traj_xu)
             else:
-                print('near boundary')
+                #print('near boundary')
                 return True
             
 def uav_trans(world_corr,env:UAV_env):#world corr can be [+-1,0,0] [0,+-1,0], output is 4D correction in u
