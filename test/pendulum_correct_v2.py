@@ -28,7 +28,7 @@ terminal_func=p_model.get_terminal_cost(T_matrix)
 
 # set up safety features
 Horizon=40
-Gamma=0.01
+Gamma=0.1
 def generate_phi():
         traj=cd.SX.sym('xi',3*Horizon + 2)
         phi=cd.vertcat(cd.DM(-3),traj[3:5])
@@ -135,7 +135,8 @@ while not termination_flag:
             print('volume', vol)
             volume_log.append(vol)
             #mve_calc.draw(C,learned_theta,weights_H)
-            if np.max(np.abs(difference))<0.04:
+            #if np.max(np.abs(difference))<0.04:
+            if np.linalg.norm(difference) < 0.02:
                 print("converged! Final Result: ",learned_theta)
                 termination_flag=True
                 break
@@ -156,7 +157,7 @@ plt.title("MVE volume")
 plt.plot(volume_log,label='MVE volume')
 plt.show()
 
-def eval_theta(theta,controller):
+def eval_theta(theta,controller,id=0):
     #perform one round with converged params
     p_env.set_init_state(np.array([0,0]))
     controller.reset_warmstart()
@@ -174,6 +175,7 @@ def eval_theta(theta,controller):
 
     #p_env.show_motion_scatter()
     plt.figure()
+    plt.title("Trajectory Solved by Params at Correction "+str(id))
     plt.xlabel('alpha')
     plt.ylabel('dalpha')
     plt.scatter(np.array(p_env.x_traj)[:,0],np.array(p_env.x_traj)[:,1],s=10,label='trajectory under learned params')
@@ -183,8 +185,8 @@ def eval_theta(theta,controller):
 
 for i in range(0,len(theta_log),3):
     print(i)
-    eval_theta(theta_log[i],controller)
-eval_theta(theta_log[-1],controller)
+    eval_theta(theta_log[i],controller,id=i)
+eval_theta(theta_log[-1],controller,id=len(theta_log)-1)
 
 def plot_theta_route(theta_log,lbs,ubs):
     plt.figure()
