@@ -15,10 +15,10 @@ from matplotlib import pyplot as plt
 #0.05
 p_model=Pendulum_Model(10,1,1,0.4,0.02)
 
-P_matrix=np.array([[0.5,0],
-                   [0,0.05]])
-T_matrix=np.array([[1,0],
-                   [0,0.025]])
+P_matrix=np.array([[0.0,0],
+                   [0,0.0]])
+T_matrix=np.array([[25,0],
+                   [0,10]])
 
 
 
@@ -27,7 +27,7 @@ step_func=p_model.get_step_cost(P_matrix,0.1)
 terminal_func=p_model.get_terminal_cost(T_matrix)
 
 # set up safety features
-Horizon=40
+Horizon=20
 Gamma=0.1
 def generate_phi():
         traj=cd.SX.sym('xi',3*Horizon + 2)
@@ -108,7 +108,8 @@ while not termination_flag:
         #print(i)
         u=controller.control(x,weights=learned_theta)
         agent_output=agent.act(controller.opt_traj)
-        if agent_output==None:
+        print(agent_output)
+        if agent_output is None:
             print('emergency stop')
             break
         elif type(agent_output)==bool:

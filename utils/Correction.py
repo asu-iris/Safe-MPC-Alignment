@@ -115,7 +115,10 @@ class Correction_Agent(object):
         else:
             if np.random.uniform(0,1)<self.p:
                 #print('agent correction')
-                return self.correct(traj_xu)
+                correction=self.correct(traj_xu).full()
+                correction[1:]=0
+                #return self.correct(traj_xu)
+                return correction
             else:
                 #print('near boundary')
                 return True
