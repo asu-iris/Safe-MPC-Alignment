@@ -56,7 +56,7 @@ agent.set_term_cost(terminal_func)
 agent.set_g(phi_func,weights=weights_H,gamma=Gamma)
 #agent.set_threshold(-0.1) #-0.5
 agent.set_threshold(-0.25) #-0.5
-agent.set_p(0.5)
+agent.set_p(0.3)
 agent.construct_graph(horizon=Horizon)
 
 #construct controller
@@ -108,7 +108,7 @@ while not termination_flag:
         #print(i)
         u=controller.control(x,weights=learned_theta)
         agent_output=agent.act(controller.opt_traj)
-        print(agent_output)
+        #print(agent_output)
         if agent_output is None:
             print('emergency stop')
             break
@@ -158,6 +158,10 @@ plt.title("MVE volume")
 plt.plot(volume_log,label='MVE volume')
 plt.show()
 
+# plt.rcParams.update({
+#     "text.usetex": True
+# })
+
 def eval_theta(theta,controller,id=0):
     #perform one round with converged params
     p_env.set_init_state(np.array([0,0]))
@@ -176,12 +180,17 @@ def eval_theta(theta,controller,id=0):
 
     #p_env.show_motion_scatter()
     plt.figure()
-    plt.title("Trajectory Solved by Params at Correction "+str(id))
-    plt.xlabel('alpha')
-    plt.ylabel('dalpha')
-    plt.scatter(np.array(p_env.x_traj)[:,0],np.array(p_env.x_traj)[:,1],s=10,label='trajectory under learned params')
+    plt.title("Trajectory Solved by Params at Correction "+str(id),fontsize=15)
+    plt.xlabel('Angle',fontsize=13)
+    plt.ylabel('Vel',fontsize=13)
+    plt.xlim(-0.5,3.5)
+    plt.ylim(-0.5,5)
+    plt.scatter(np.array(p_env.x_traj)[:,0],np.array(p_env.x_traj)[:,1],s=10,label='trajectory with params')
     plt.plot(np.linspace(0,3.2,100), -0.6*(np.linspace(0,3.2,100)-5),color='r',label='ground truth constraint')
-    plt.legend()
+    if id > 0:
+        plt.plot(np.linspace(0,3.2,100), (3-theta[0]*np.linspace(0,3.2,100))/theta[1],color='orange',label='learned constraint')
+    plt.legend(fontsize=13)
+    plt.savefig('../Data/pendulum/traj_'+str(id)+'.png')
     plt.show(block=False)
 
 for i in range(0,len(theta_log),3):

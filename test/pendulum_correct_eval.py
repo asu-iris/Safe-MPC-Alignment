@@ -16,10 +16,10 @@ def pendulum_eval():
     #0.05
     p_model=Pendulum_Model(10,1,1,0.4,0.02)
 
-    P_matrix=np.array([[0.5,0],
-                    [0,0.05]])
-    T_matrix=np.array([[1,0],
-                    [0,0.025]])
+    P_matrix=np.array([[0.0,0],
+                   [0,0.0]])
+    T_matrix=np.array([[25,0],
+                   [0,10]])
 
 
 
@@ -29,7 +29,7 @@ def pendulum_eval():
 
     # set up safety features
     Horizon=40
-    Gamma=0.01
+    Gamma=0.1
     def generate_phi():
             traj=cd.SX.sym('xi',3*Horizon + 2)
             phi=cd.vertcat(cd.DM(-3),traj[3:5])
@@ -57,7 +57,7 @@ def pendulum_eval():
     agent.set_g(phi_func,weights=weights_H,gamma=Gamma)
     #agent.set_threshold(-0.1) #-0.5
     agent.set_threshold(-0.25) #-0.5
-    agent.set_p(0.5)
+    agent.set_p(0.3)
     agent.construct_graph(horizon=Horizon)
 
     #construct controller
@@ -109,7 +109,7 @@ def pendulum_eval():
             #print(i)
             u=controller.control(x,weights=learned_theta)
             agent_output=agent.act(controller.opt_traj)
-            if agent_output==None:
+            if agent_output is None:
                 #print('emergency stop')
                 break
             elif type(agent_output)==bool:
@@ -136,7 +136,8 @@ def pendulum_eval():
                 #print('volume', vol)
                 volume_log.append(vol)
                 #mve_calc.draw(C,learned_theta,weights_H)
-                if np.max(np.abs(difference))<0.04:
+                #if np.max(np.abs(difference))<0.04:
+                if np.linalg.norm(difference) < 0.02:
                     print("converged! Final Result: ",learned_theta)
                     termination_flag=True
                     break
