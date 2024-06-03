@@ -65,13 +65,15 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
 
         print('target_r', target_r)
         visualizer.set_target_pos(target_r)
+        if recorder is not None:
+            recorder.set_target_pos(target_r)
 
         uav_env.set_init_state(init_x)
         controller.reset_warmstart()
 
         correction_flag = False
         human_corr_str = None
-        for i in range(400):
+        for i in range(800):
             if not PAUSE[0]:
                 if MSG[0]:
                     # correction
@@ -132,6 +134,9 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
 
                 # visualization
                 visualizer.render_update()
+
+                if recorder is not None:
+                    recorder.record()
 
                 uav_env.step(u)
                 time.sleep(0.03)
@@ -228,7 +233,8 @@ logger = UserLogger(user=USER_ID,trail=TRIAL_ID,dir=logger_path)
 
 #########################################################################################
 # recorder
-recorder = Recorder_sync(env=uav_env, controller=controller)
+recorder = Recorder_sync(env=uav_env, controller=controller,visualizer=visualizer)
+#recorder = None
 #########################################################################################
 flag, cnt, weights = mainloop(learned_theta=learned_theta,
                      uav_env=uav_env,
@@ -240,5 +246,5 @@ flag, cnt, weights = mainloop(learned_theta=learned_theta,
                      recorder=recorder)
 print(flag, cnt)
 logger.log_termination(flag, cnt,weights)
-#recorder.write()
+recorder.write()
 sys.exit()

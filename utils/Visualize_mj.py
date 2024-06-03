@@ -239,8 +239,8 @@ class uav_visualizer_mj_v4(uav_visualizer_mj_v3):
         self.plot_mpc_traj_aux()
         self.plot_target_aux()
         frame_raw=self.renderer.render() 
-        frame=cv2.cvtColor(frame_raw,cv2.COLOR_RGB2BGR)
-        cv2.imshow('aux_view', frame)
+        self.frame_aux=cv2.cvtColor(frame_raw,cv2.COLOR_RGB2BGR)
+        cv2.imshow('aux_view', self.frame_aux)
         k = cv2.waitKey(1)
         #print(frame.shape)
         

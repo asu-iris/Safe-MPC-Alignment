@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.getcwd()))
 from Envs.UAV import UAV_env,UAV_env_mj
 from Envs.robot_arm import EFFECTOR_env_mj
 from Solvers.OCsolver import ocsolver_v2,ocsolver_v4
-
+from utils.Visualize_mj import uav_visualizer_mj_v4
 
 import mujoco
 import mujoco.viewer
@@ -15,7 +15,7 @@ import datetime
 import cv2
 
 class Recorder_sync(object):
-    def __init__(self,env:UAV_env_mj,controller:ocsolver_v2=None,height=480,width=640, 
+    def __init__(self,env:UAV_env_mj,controller:ocsolver_v2=None,visualizer:uav_visualizer_mj_v4=None,height=480,width=640, 
                  filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test'),
                  cam_flag=False) -> None:
         self.env=env
@@ -46,10 +46,20 @@ class Recorder_sync(object):
             #input()
             self.cam_frames=[]
 
+        self.aux_frames=None
+        self.aux_flag=False
+        self.vis=visualizer
+        if visualizer is not None:
+            self.aux_frames=[]
+            self.aux_flag=True
+
+        self.target_pos=None
         #initialize MPC trajectory
         #print(self.scene.ngeom)
         #input()
-        
+    def set_target_pos(self,target):
+        self.target_pos=target
+
     def plot_mpc_traj(self):
         traj_xu=self.controller.opt_traj
         traj_plot=[]
@@ -77,11 +87,27 @@ class Recorder_sync(object):
                     10,
                     traj_plot[i,0],traj_plot[i,1],traj_plot[i,2],
                     traj_plot[i+1,0],traj_plot[i+1,1],traj_plot[i+1,2])
-            
+
+    def plot_target(self):
+        # register target ball in renderer
+        self.scene.ngeom+=1
+        mujoco.mjv_initGeom(
+            self.scene.geoms[self.scene.ngeom-1],
+            type=mujoco.mjtGeom.mjGEOM_SPHERE,
+            size=[0.2, 0, 0],
+            pos=-10*np.ones(3),
+            mat=np.eye(3).flatten(),
+            rgba=np.array([0, 0, 1, 1])
+        )
+
+        self.scene.geoms[self.scene.ngeom-1].pos=self.target_pos
+   
     def record(self,corr_flag=False,correction=None):
         self.renderer.update_scene(self.env.data, "track_cf2")
         if self.controller is not None:
             self.plot_mpc_traj()
+        if self.target_pos is not None:
+            self.plot_target()
         #print(self.scene.ngeom)
         #input()
         # mj frames
@@ -90,6 +116,10 @@ class Recorder_sync(object):
         dt=datetime.datetime.now()
         dt_str=dt.strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
         self.timestamps.append(dt_str)
+        # aux view
+        if self.aux_flag:
+            aux_frame=self.vis.frame_aux
+            self.aux_frames.append(aux_frame)
         #webcam
         if self.cam_flag:
             ret, img = self.cap.read()
@@ -149,6 +179,11 @@ class Recorder_sync(object):
             frame_filename=os.path.join(self.filepath,'mj_'+str(i)+'.jpg')
             cv2.imwrite(frame_filename,cv2.cvtColor(self.frames[i],cv2.COLOR_RGB2BGR))
 
+        if self.aux_flag:
+            for i in range(n_frames):
+                frame_filename=os.path.join(self.filepath,'aux_'+str(i)+'.jpg')
+                cv2.imwrite(frame_filename,self.aux_frames[i])
+
         if self.cam_flag:
             for i in range(n_frames):
                 frame_filename=os.path.join(self.filepath,'cam_'+str(i)+'.jpg')
@@ -173,7 +208,7 @@ class Recorder_Arm(object):
 
         self.filepath=filepath
         self.frames=[]
-    
+
     def record_mj(self,corr_flag=False,correction=None):
         self.renderer.update_scene(self.env.data, "cam_1")
         frame=self.renderer.render()
@@ -194,4 +229,62 @@ class Recorder_Arm(object):
 
         video.release()
 
+class Recorder_Arm_v2(object):
+    def __init__(self,env:EFFECTOR_env_mj,controller:ocsolver_v4=None,height=480,width=640, fps=12, 
+                 filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test_arm'),
+                 cam_flag=False) -> None:
+        self.env=env
+        self.controller=controller
+        self.mpc_horizon=15
+
+        self.height = height
+        self.width = width
+        self.size=(width,height)
+        self.fps = fps
+
+        self.renderer=mujoco.Renderer(self.env.model, self.height, self.width)
+        self.renderer.update_scene(self.env.data, "cam_1")
+        self.scene=self.renderer.scene
+
+        self.filepath=filepath
+        self.frames=[]
+
+        self.target_pos=None
+    
+    def set_target_pos(self,target):
+        self.target_pos=target
+
+
+    def plot_target(self):
+        # register target ball in renderer
+        self.scene.ngeom+=1
+        mujoco.mjv_initGeom(
+            self.scene.geoms[self.scene.ngeom-1],
+            type=mujoco.mjtGeom.mjGEOM_SPHERE,
+            size=[0.02, 0, 0],
+            pos=-10*np.ones(3),
+            mat=np.eye(3).flatten(),
+            rgba=np.array([0, 1, 1, 1])
+        )
+
+        self.scene.geoms[self.scene.ngeom-1].pos=self.target_pos
+
+    def record_mj(self,corr_flag=False,correction=None):
+        self.renderer.update_scene(self.env.data, "cam_1")
+        if self.target_pos is not None:
+            self.plot_target()
+        frame=self.renderer.render()
+        self.frames.append(frame)
+
+    def write(self):
+        if not os.path.exists(self.filepath):
+            os.makedirs(self.filepath)
+
+        files=os.listdir(self.filepath)
+        for file in files:
+            os.remove(os.path.join(self.filepath,file))
+
+        for i in range(len(self.frames)):
+            frame_filename=os.path.join(self.filepath,'mj_'+str(i)+'.jpg')
+            cv2.imwrite(frame_filename,cv2.cvtColor(self.frames[i],cv2.COLOR_RGB2BGR))
       

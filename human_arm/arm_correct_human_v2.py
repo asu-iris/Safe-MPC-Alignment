@@ -20,7 +20,7 @@ from utils.filter import LowPassFilter_Vel
 
 import mujoco
 
-from utils.recorder import Recorder_Arm
+from utils.recorder import Recorder_Arm_v2
 from utils.user_study_logger import UserLogger
 
 #Configuration of log directory
@@ -54,7 +54,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
         arm_env.reset_env()
         controller.reset_warmstart()
         #print(env.get_site_pos())
-
+        recorder.set_target_pos(target_pos_list[target_idx])
         human_corr_str = None
         
 
@@ -115,6 +115,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                 
                 # visualization
                 visualizer.render_update()
+                recorder.record_mj()
 
                 arm_env.step(u)
                 time.sleep(0.05)
@@ -187,7 +188,7 @@ hb_calculator.construct_graph(horizon=Horizon)
 
 mve_calc = mvesolver('uav_mve', theta_dim)
 mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)
-#rec=Recorder_Arm(env)
+recorder=Recorder_Arm_v2(env)
 #rec.record_mj()
 
 # logger
@@ -201,8 +202,9 @@ flag, cnt, weights = mainloop(learned_theta=learned_theta,
          hb_calculator=hb_calculator,
          mve_calc=mve_calc,
          visualizer=visualizer,
-         logger=logger)
+         logger=logger,
+         recorder=recorder)
 print(flag, cnt)
 logger.log_termination(flag, cnt,weights)
-#recorder.write()
+recorder.write()
 sys.exit()
