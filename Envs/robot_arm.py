@@ -181,6 +181,10 @@ class EFFECTOR_env_mj(object):
     def reset_env(self):
         self.traj_x=[]
         self.set_init_state_v(self.ini_joint)
+    
+    def save_traj_line(self):
+        traj_line=np.concatenate((self.get_curr_state().flatten(),self.get_gripper_pos()))
+        self.traj_x.append(traj_line.flatten())
 
     def set_init_state_v(self, x: np.ndarray):
         mujoco.mj_resetData(self.model, self.data)
@@ -189,7 +193,8 @@ class EFFECTOR_env_mj(object):
         self.data.ctrl = np.zeros(8)
         for i in range(100):
             mujoco.mj_step(self.model, self.data)
-        self.traj_x.append(self.get_curr_state().flatten())
+        
+        self.save_traj_line()
 
     def step(self, u):  # u:speed in end effector
         u=np.array(u)
@@ -210,7 +215,9 @@ class EFFECTOR_env_mj(object):
         for i in range(loop_num):
             mujoco.mj_step(self.model, self.data)
             #print(self.data.qpos[1])
-        self.traj_x.append(self.get_curr_state().flatten())
+
+        self.save_traj_line()
+        
 
     def get_curr_joints(self):
         return self.data.qpos[0:7].copy()
@@ -219,6 +226,11 @@ class EFFECTOR_env_mj(object):
         site_id=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
         return self.data.site_xpos[site_id]
     
+    def get_gripper_pos(self):
+        site_id_left=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SITE,'gripper_left')
+        site_id_right=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SITE,'gripper_right')
+        return np.concatenate((self.data.site_xpos[site_id_left],self.data.site_xpos[site_id_right]))
+
     def get_site_vel(self):
         site_id=mujoco.mj_name2id(self.model,mujoco.mjtObj.mjOBJ_SITE,'flange')
         jac_p=np.zeros((3,9))
