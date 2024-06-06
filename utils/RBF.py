@@ -1,5 +1,10 @@
 import numpy as np
 import casadi as cd
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.dirname(os.getcwd())))
+sys.path.append(os.path.abspath(os.getcwd()))
 
 from utils.Casadi_Quat import Angle_Axis_Quat,Quat_mul,q_dist_1,q_dist_2
 
@@ -286,5 +291,29 @@ def gen_eval_func_uav(weights,X_c=np.linspace(3, 7, 5),Y_c=np.linspace(3, 7, 5),
     g=bias+phi.T@weights
     return cd.Function('g', [pos], [g])
 
-    
-    
+def gen_eval_func_arm(weights,z_min, z_max ,num_z,bias=-2,epsilon_q=1,epsilon_z=1,z_factor=0.05,mode='default',softness=50):
+    phi_list = []
+    org_quat=cd.DM([0.0,-0.707,0.0,0.707])
+    ref_axis=np.array([1,0,0])
+
+    ang_z=cd.SX.sym('zq',2)
+    z_pos=ang_z[1]
+    ang=ang_z[0]
+    rot_qq=Angle_Axis_Quat(ang,ref_axis)
+    q=Quat_mul(rot_qq,org_quat)
+
+    for theta in np.linspace(-np.pi/4,np.pi*3/4,10):
+        rot_quat=Angle_Axis_Quat(theta,ref_axis)
+        dst_quat=Quat_mul(rot_quat,org_quat)
+        phi_list.append(4.1*0.75*quat_rbf(epsilon_q,dst_quat,q)) #4.1: discount 0.75: sigmoid 
+        #phi_list.append(q[0])
+
+    for z in np.linspace(z_min,z_max,num_z):
+        phi_list.append(z_factor*4.1*0.75*rbf_general(epsilon=epsilon_z,dist=z_pos-z))
+
+    phi=cd.vertcat(*phi_list)
+    g=bias+phi.T@weights
+
+    return cd.Function('g', [ang_z], [g])
+
+

@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath(os.path.dirname(os.getcwd())))
 sys.path.append(os.path.abspath(os.getcwd()))
 
 import casadi as cd
-from utils.RBF import gen_eval_func_uav
+from utils.RBF import gen_eval_func_uav,gen_eval_func_arm
 
 rbf_X_c = np.array([9.8])
 rbf_Y_c = np.linspace(0, 10, 10)  # 5
@@ -21,7 +21,7 @@ weights_learned=np.array([ 10.88026447,  27.00317417,  46.44679587,  14.87593348
 
 #print(g_func(np.array([[10,1,1],[10,2,2]]).T))
 
-def heatmap_weight(weights):
+def heatmap_weight_uav(weights):
     savepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','uav_figs')
     g_func=gen_eval_func_uav(weights=weights,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.45,bias=-1)
     y = np.linspace(0, 10, 100)
@@ -57,4 +57,34 @@ def heatmap_weight(weights):
 
     plt.show()
 
-heatmap_weight(weights_learned)
+def heatmap_weight_arm(weights):
+    savepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','arm_figs')
+    g_func=gen_eval_func_arm(weights=weights,z_min=0.2,z_max=0.9, num_z=10, bias=-0.8, epsilon_z=12, epsilon_q=1.8)
+    theta = np.linspace(-np.pi/4, 3*np.pi/4, 100)
+    z = np.linspace(0.2, 0.9, 100)
+    T,Z = np.meshgrid(theta, z)
+    T_v=T.reshape(-1,1)
+    Z_v=Z.reshape(-1,1)
+    P= np.concatenate((T_v,Z_v),axis=1)
+    G=g_func(P.T).full().reshape(100,100)
+    print(G.shape)
+
+    plt.figure(figsize=(8, 6))
+    contour = plt.contour(T, Z, G, levels=[0.0], colors='black', linewidths=2, linestyles='dashed')
+    plt.pcolormesh( T, Z, G, cmap='RdBu')
+    cbar=plt.colorbar(label='Function Value')
+    cbar.ax.tick_params(labelsize=20) 
+    cbar.set_label('g Value',size=20)
+    plt.title('Heatmap of Learned constraint: ARM', fontsize=20)
+    plt.xlabel('theta', fontsize=20)
+    plt.ylabel('z', fontsize=20)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.tight_layout()
+
+    plt.show()
+
+
+arm_weights=np.load('../Data/user_study_arm_mj/user_0/trial_0/weights.npy')
+print(arm_weights)
+heatmap_weight_arm(arm_weights)

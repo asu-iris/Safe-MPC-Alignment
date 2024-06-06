@@ -24,8 +24,10 @@ def q_dist_2(q_1,q_2):
     return 1 - (q_1.T @ q_2)**2
 
 def Quat_mul(q_1,q_2):
-    q_1_cd=cd.DM(q_1)
-    q_2_cd=cd.DM(q_2)
+    # q_1_cd=cd.DM(q_1)
+    # q_2_cd=cd.DM(q_2)
+    q_1_cd= q_1
+    q_2_cd= q_2
     #print(q_1_cd.shape)
     #print(q_2_cd.shape)
     eta_1=q_1_cd[0]
