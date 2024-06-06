@@ -258,3 +258,33 @@ def generate_rbf_quat_z(Horizon,x_center,x_half,ref_axis,num_q,z_min,z_max
         phi_p2 = cd.vertcat(*phi_list_p2)
         phi = cd.vertcat(phi_p1,phi_p2)
         return cd.Function('phi', [traj], [phi])
+    
+#######################################################
+def gen_eval_func_uav(weights,X_c=np.linspace(3, 7, 5),Y_c=np.linspace(3, 7, 5),Z_c=None, 
+                     epsilon=1.2,bias=-5):
+    pos=cd.SX.sym('x',3)
+    x_pos=pos[0]
+    y_pos=pos[1]
+    z_pos=pos[2]
+
+    phi_list=[]
+    grid_x, grid_y = np.meshgrid(X_c, Y_c)
+    grid_x = grid_x.reshape(-1, 1)
+    grid_y = grid_y.reshape(-1, 1)
+    centers = np.concatenate([grid_x, grid_y], axis=1)
+    for center in centers:
+        phi_list.append(gau_rbf_xy(x_pos, y_pos, center[0], center[1], epsilon))
+
+    grid_x, grid_z = np.meshgrid(X_c, Y_c)
+    grid_x = grid_x.reshape(-1, 1)
+    grid_z = grid_z.reshape(-1, 1)
+    centers = np.concatenate([grid_x, grid_z], axis=1)
+    for center in centers:
+        phi_list.append(gau_rbf_xy(x_pos, z_pos, center[0], center[1], epsilon))
+
+    phi=cd.vertcat(*phi_list)
+    g=bias+phi.T@weights
+    return cd.Function('g', [pos], [g])
+
+    
+    

@@ -263,7 +263,7 @@ class arm_visualizer_mj_v1(object):
             size=[0.02, 0, 0],
             pos=-10*np.ones(3),
             mat=np.eye(3).flatten(),
-            rgba=np.array([0, 1, 1, 1])
+            rgba=np.array([0, 1, 1, 0.2])
         )
 
     def render_update(self):

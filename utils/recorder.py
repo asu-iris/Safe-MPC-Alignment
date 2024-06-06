@@ -248,6 +248,7 @@ class Recorder_Arm_v2(object):
 
         self.filepath=filepath
         self.frames=[]
+        self.frames_2=[]
 
         self.target_pos=None
     
@@ -276,6 +277,10 @@ class Recorder_Arm_v2(object):
         frame=self.renderer.render()
         self.frames.append(frame)
 
+        self.renderer.update_scene(self.env.data, "cam_2")
+        frame=self.renderer.render()
+        self.frames_2.append(frame)
+
     def write(self):
         if not os.path.exists(self.filepath):
             os.makedirs(self.filepath)
@@ -285,6 +290,10 @@ class Recorder_Arm_v2(object):
             os.remove(os.path.join(self.filepath,file))
 
         for i in range(len(self.frames)):
-            frame_filename=os.path.join(self.filepath,'mj_'+str(i)+'.jpg')
+            frame_filename=os.path.join(self.filepath,'mj_cam1_'+str(i)+'.jpg')
             cv2.imwrite(frame_filename,cv2.cvtColor(self.frames[i],cv2.COLOR_RGB2BGR))
+
+        for i in range(len(self.frames_2)):
+            frame_filename=os.path.join(self.filepath,'mj_cam2_'+str(i)+'.jpg')
+            cv2.imwrite(frame_filename,cv2.cvtColor(self.frames_2[i],cv2.COLOR_RGB2BGR))
       
