@@ -273,14 +273,14 @@ def gen_eval_func_uav(weights,X_c=np.linspace(3, 7, 5),Y_c=np.linspace(3, 7, 5),
     grid_y = grid_y.reshape(-1, 1)
     centers = np.concatenate([grid_x, grid_y], axis=1)
     for center in centers:
-        phi_list.append(gau_rbf_xy(x_pos, y_pos, center[0], center[1], epsilon))
+        phi_list.append(6.5*gau_rbf_xy(x_pos, y_pos, center[0], center[1], epsilon))
 
     grid_x, grid_z = np.meshgrid(X_c, Y_c)
     grid_x = grid_x.reshape(-1, 1)
     grid_z = grid_z.reshape(-1, 1)
     centers = np.concatenate([grid_x, grid_z], axis=1)
     for center in centers:
-        phi_list.append(gau_rbf_xy(x_pos, z_pos, center[0], center[1], epsilon))
+        phi_list.append(6.5*gau_rbf_xy(x_pos, z_pos, center[0], center[1], epsilon))
 
     phi=cd.vertcat(*phi_list)
     g=bias+phi.T@weights
