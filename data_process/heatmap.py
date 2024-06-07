@@ -85,6 +85,9 @@ def heatmap_weight_arm(weights):
     plt.show()
 
 
-arm_weights=np.load('../Data/user_study_arm_mj/user_0/trial_0/weights.npy')
+arm_weights=np.array([ 0.8605393 ,  0.8317794 ,  1.11404594,  0.48366286, -0.83400422,
+       -1.20513047, -0.080032  , -0.34014744,  0.37021907,  0.97919927,
+        1.03243613,  1.04706619, -0.06139236, -1.80106347,  1.84331149,
+        2.98620837,  2.9307057 ,  1.16053416,  1.        ,  1.        ])
 print(arm_weights)
 heatmap_weight_arm(arm_weights)

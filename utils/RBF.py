@@ -305,15 +305,17 @@ def gen_eval_func_arm(weights,z_min, z_max ,num_z,bias=-2,epsilon_q=1,epsilon_z=
     for theta in np.linspace(-np.pi/4,np.pi*3/4,10):
         rot_quat=Angle_Axis_Quat(theta,ref_axis)
         dst_quat=Quat_mul(rot_quat,org_quat)
-        phi_list.append(4.1*0.75*quat_rbf(epsilon_q,dst_quat,q)) #4.1: discount 0.75: sigmoid 
+        phi_list.append(4.1*0.69*quat_rbf(epsilon_q,dst_quat,q)) #4.1: discount 0.75: sigmoid 
         #phi_list.append(q[0])
 
     for z in np.linspace(z_min,z_max,num_z):
-        phi_list.append(z_factor*4.1*0.75*rbf_general(epsilon=epsilon_z,dist=z_pos-z))
+        phi_list.append(z_factor*4.1*0.69*rbf_general(epsilon=epsilon_z,dist=z_pos-z))
 
     phi=cd.vertcat(*phi_list)
     g=bias+phi.T@weights
 
     return cd.Function('g', [ang_z], [g])
+
+#print(sigmoid(0.15**2 - (0.08)**2,softness=50))
 
 
