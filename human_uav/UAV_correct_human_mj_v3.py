@@ -234,7 +234,7 @@ logger = UserLogger(user=USER_ID,trail=TRIAL_ID,dir=logger_path)
 #########################################################################################
 # recorder
 recorder = Recorder_sync(env=uav_env, controller=controller,visualizer=visualizer)
-recorder = None
+#recorder = None
 #########################################################################################
 flag, cnt, weights = mainloop(learned_theta=learned_theta,
                      uav_env=uav_env,
@@ -246,5 +246,5 @@ flag, cnt, weights = mainloop(learned_theta=learned_theta,
                      recorder=recorder)
 print(flag, cnt)
 logger.log_termination(flag, cnt,weights)
-#recorder.write()
+recorder.write()
 sys.exit()
