@@ -179,7 +179,7 @@ class VideoMaker(object):
             img[330:,440:,:]=hand_img
 
             if text_cnt>0:
-                new_img=cv2.putText(img,text,(20,420),cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255))
+                new_img=cv2.putText(img,text_map[text],(20,420),cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255))
                 video.write(new_img)
                 text_cnt-=1
             
@@ -196,7 +196,7 @@ class VideoMaker(object):
 
 if __name__=='__main__':
     path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test_arm')
-    vm=VideoMaker(path,cam_flag=False)
+    vm=VideoMaker(path,cam_flag=True)
     vm.process_arm()
 
 

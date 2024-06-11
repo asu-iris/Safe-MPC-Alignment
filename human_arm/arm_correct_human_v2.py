@@ -196,7 +196,7 @@ hb_calculator.construct_graph(horizon=Horizon)
 
 mve_calc = mvesolver('uav_mve', theta_dim)
 mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)
-recorder=Recorder_Arm_v2(env)
+recorder=Recorder_Arm_v2(env,cam_flag=True)
 #recorder=None
 #rec.record_mj()
 
