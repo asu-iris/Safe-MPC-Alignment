@@ -140,7 +140,7 @@ class uav_visualizer_mj_v3(uav_visualizer_mj_v2):
             size=[0.2, 0, 0],
             pos=-10*np.ones(3),
             mat=np.eye(3).flatten(),
-            rgba=np.array([0, 0, 1, 1])
+            rgba=np.array([1, 0.8, 0, 1])
         )
         print(self.scene.ngeom)
 
@@ -189,7 +189,7 @@ class uav_visualizer_mj_v4(uav_visualizer_mj_v3):
             size=[0.2, 0, 0],
             pos=-10*np.ones(3),
             mat=np.eye(3).flatten(),
-            rgba=np.array([0, 0, 1, 1])
+            rgba=np.array([1, 0.8, 0, 1])
         )
         print(self.scene_aux.ngeom)
 
@@ -201,7 +201,7 @@ class uav_visualizer_mj_v4(uav_visualizer_mj_v3):
             size=[0.2, 0, 0],
             pos=-10*np.ones(3),
             mat=np.eye(3).flatten(),
-            rgba=np.array([0, 0, 1, 1])
+            rgba=np.array([1, 0.8, 0, 1])
         )
         self.scene_aux.geoms[self.scene_aux.ngeom-1].pos=self.target_pos
 

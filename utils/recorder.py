@@ -97,7 +97,7 @@ class Recorder_sync(object):
             size=[0.2, 0, 0],
             pos=-10*np.ones(3),
             mat=np.eye(3).flatten(),
-            rgba=np.array([0, 0, 1, 1])
+            rgba=np.array([1, 0.8, 0, 1])
         )
 
         self.scene.geoms[self.scene.ngeom-1].pos=self.target_pos
