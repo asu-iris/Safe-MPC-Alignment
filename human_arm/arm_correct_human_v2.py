@@ -39,7 +39,8 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
     global PAUSE, MSG
     num_corr = 0
     #target_end_pos=[0.35,-0.5,0.5] #[-0.6,-0.5,0.5]
-    target_pos_list=[[-0.6,-0.5,0.4],[-0.6,-0.5,0.5],[-0.6,-0.5,0.6]]
+    #target_pos_list=[[-0.6,-0.5,0.4],[-0.6,-0.5,0.5],[-0.6,-0.5,0.6]]
+    target_pos_list=[[-0.6,-0.5,0.6],[-0.6,-0.5,0.6],[-0.6,-0.5,0.6]]
     target_quat=[0.0,-0.707,0.0,0.707]
     #target_quat=[-0.36,0.6,0.36,-0.6]
     
@@ -56,8 +57,9 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
         #print(env.get_site_pos())
         if recorder is not None:
             recorder.set_target_pos(target_pos_list[target_idx])
+
         human_corr_str = None
-        
+        correction_flag=False
 
         for i in range(400):
             if not PAUSE[0]:
@@ -78,7 +80,8 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
 
                     if MSG[0] == 'reset':
                         MSG[0] = None
-                        #recorder.record(True, 'reset')
+                        if recorder is not None:
+                            recorder.record(True, 'reset')
                         print('one target result',arm_env.examine_success())
                         break
                     human_corr = arm_key_interface_v2(MSG)
@@ -87,6 +90,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
 
                     #print('correction', human_corr)
                     corr_num+=1
+                    correction_flag=True
                     human_corr_e = np.concatenate([human_corr.reshape(-1, 1), np.zeros((6 * (Horizon - 1), 1))])
                     h, b, h_phi, b_phi = hb_calculator.calc_planes(learned_theta, x, controller.opt_traj,
                                                                    human_corr=human_corr_e,
@@ -115,12 +119,14 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     return False, num_corr ,learned_theta
                 
                 # visualization
-                visualizer.render_update()
+                visualizer.render_update()               
                 if recorder is not None:
-                    recorder.record_mj()
-
+                    recorder.record_mj(correction_flag,human_corr_str)
+                correction_flag=False
+                human_corr_str=None
                 arm_env.step(u)
-                time.sleep(0.05)
+                recorder.record_cam()
+                #time.sleep(0.05)
 
             else:
                 while PAUSE[0]:
@@ -190,8 +196,8 @@ hb_calculator.construct_graph(horizon=Horizon)
 
 mve_calc = mvesolver('uav_mve', theta_dim)
 mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)
-recorder=Recorder_Arm_v2(env)
-recorder=None
+recorder=Recorder_Arm_v2(env,cam_flag=True)
+#recorder=None
 #rec.record_mj()
 
 # logger

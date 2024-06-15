@@ -250,6 +250,20 @@ class Recorder_Arm_v2(object):
         self.frames=[]
         self.frames_2=[]
 
+        self.timestamps=[]
+        self.corrections=[]
+
+        self.cam_frames=None
+        self.cap=None
+
+        self.cam_flag=cam_flag
+        if self.cam_flag:
+            self.cap=cv2.VideoCapture(0)
+            ret, img = self.cap.read()
+            print(img.shape)
+            #input()
+            self.cam_frames=[]
+
         self.target_pos=None
     
     def set_target_pos(self,target):
@@ -270,16 +284,38 @@ class Recorder_Arm_v2(object):
 
         self.scene.geoms[self.scene.ngeom-1].pos=self.target_pos
 
+    def record(self,corr_flag=False,correction=None):
+        self.record_mj(corr_flag,correction)
+        self.record_cam()
+
     def record_mj(self,corr_flag=False,correction=None):
         self.renderer.update_scene(self.env.data, "cam_1")
         if self.target_pos is not None:
             self.plot_target()
         frame=self.renderer.render()
         self.frames.append(frame)
+        
+        dt=datetime.datetime.now()
+        dt_str=dt.strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
+        self.timestamps.append(dt_str)
+        # self.renderer.update_scene(self.env.data, "cam_2")
+        # frame=self.renderer.render()
+        # self.frames_2.append(frame)
 
-        self.renderer.update_scene(self.env.data, "cam_2")
-        frame=self.renderer.render()
-        self.frames_2.append(frame)
+        if corr_flag==False:
+            self.corrections.append(None)
+        
+        else:
+            self.corrections.append(correction)
+
+    def record_cam(self):
+        if self.cam_flag:
+            ret, img = self.cap.read()
+            scale_percent=60
+            width=int(img.shape[1]*scale_percent/100)
+            height=int(img.shape[0]*scale_percent/100)
+            img_new=cv2.resize(img, (width,height),)
+            self.cam_frames.append(img)
 
     def write(self):
         if not os.path.exists(self.filepath):
@@ -289,11 +325,21 @@ class Recorder_Arm_v2(object):
         for file in files:
             os.remove(os.path.join(self.filepath,file))
 
-        for i in range(len(self.frames)):
+        n_frames=len(self.frames)
+
+        f=open(os.path.join(self.filepath,'timestamps.txt'),'w')
+        for i in range(n_frames):
+            print(str(i),self.timestamps[i], str(self.corrections[i]),file=f)
             frame_filename=os.path.join(self.filepath,'mj_cam1_'+str(i)+'.jpg')
             cv2.imwrite(frame_filename,cv2.cvtColor(self.frames[i],cv2.COLOR_RGB2BGR))
+        f.close()
 
-        for i in range(len(self.frames_2)):
-            frame_filename=os.path.join(self.filepath,'mj_cam2_'+str(i)+'.jpg')
-            cv2.imwrite(frame_filename,cv2.cvtColor(self.frames_2[i],cv2.COLOR_RGB2BGR))
+        if self.cam_flag:
+            for i in range(n_frames):
+                frame_filename=os.path.join(self.filepath,'cam_'+str(i)+'.jpg')
+                cv2.imwrite(frame_filename,self.cam_frames[i])
+
+        # for i in range(len(self.frames_2)):
+        #     frame_filename=os.path.join(self.filepath,'mj_cam2_'+str(i)+'.jpg')
+        #     cv2.imwrite(frame_filename,cv2.cvtColor(self.frames_2[i],cv2.COLOR_RGB2BGR))
       
