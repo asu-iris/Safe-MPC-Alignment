@@ -44,9 +44,9 @@
     <geom name="bar_11" size="0.05" type="cylinder" fromto="10 10 10 10 6.5 5.4" rgba="1 0.4 0 0.6"/>
     <geom name="bar_12" size="0.05" type="cylinder" fromto="10 0 10 10 3.5 5.4" rgba="1 0.4 0 0.6"/>
 
-    <site name="target_1" size="0.4" type="sphere" pos="19 1 9" rgba="1 0.8 0 1"/>
+    <!-- <site name="target_1" size="0.4" type="sphere" pos="19 1 9" rgba="1 0.8 0 1"/>
     <site name="target_2" size="0.4" type="sphere" pos="19 5 9" rgba="1 0.8 0 1"/>
-    <site name="target_3" size="0.4" type="sphere" pos="19 9 9" rgba="1 0.8 0 1"/>
+    <site name="target_3" size="0.4" type="sphere" pos="19 9 9" rgba="1 0.8 0 1"/> -->
     <!-- <geom name="wall_1" size="0.05 1.75 5" type="box" pos="10 1.75 5" rgba="0.5 0.5 0.5 0.5"/>
     <geom name="wall_2" size="0.05 1.75 5" type="box" pos="10 8.25 5" rgba="0.5 0.5 0.5 0.5"/>
     <geom name="wall_3" size="0.05 1.5 2" type="box" pos="10 5 2" rgba="0.5 0.5 0.5 0.5"/>

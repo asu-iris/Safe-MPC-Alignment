@@ -17,7 +17,7 @@ import cv2
 class Recorder_sync(object):
     def __init__(self,env:UAV_env_mj,controller:ocsolver_v2=None,visualizer:uav_visualizer_mj_v4=None,height=480,width=640, 
                  filepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test'),
-                 cam_flag=False) -> None:
+                 cam_flag=False,aux_flag=False) -> None:
         self.env=env
         self.controller=controller
         self.mpc_horizon=15
@@ -54,6 +54,7 @@ class Recorder_sync(object):
             self.aux_flag=True
 
         self.target_pos=None
+        self.aux_flag=aux_flag
         #initialize MPC trajectory
         #print(self.scene.ngeom)
         #input()

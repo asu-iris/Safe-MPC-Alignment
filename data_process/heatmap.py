@@ -21,8 +21,7 @@ weights_learned=np.array([ 10.88026447,  27.00317417,  46.44679587,  14.87593348
 
 #print(g_func(np.array([[10,1,1],[10,2,2]]).T))
 
-def heatmap_weight_uav(weights):
-    savepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','uav_figs')
+def heatmap_weight_uav(weights, path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','uav_figs'),name='heatmap.png'):
     g_func=gen_eval_func_uav(weights=weights,X_c=rbf_X_c,Y_c=rbf_Y_c,Z_c=rbf_Z_c,epsilon=0.45,bias=-1)
     y = np.linspace(0, 10, 100)
     z = np.linspace(0, 10, 100)
@@ -43,7 +42,7 @@ def heatmap_weight_uav(weights):
     plt.figure(figsize=(8, 6))
     plt.plot(*gate_points.T,color='black',linewidth=3.0)
     contour = plt.contour(Y, Z, G, levels=[0.0], colors='black', linewidths=2, linestyles='dashed')
-    plt.pcolormesh( Y, Z, G, cmap='RdBu_r')
+    plt.pcolormesh( Y, Z, G, cmap='RdBu_r',vmin=-250,vmax=900)
     cbar=plt.colorbar(label='Function Value')
     cbar.ax.tick_params(labelsize=20) 
     cbar.set_label('g Value',size=20)
@@ -53,9 +52,9 @@ def heatmap_weight_uav(weights):
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.tight_layout()
-    plt.savefig(os.path.join(savepath,'heatmap.png'))
+    plt.savefig(os.path.join(path,name))
 
-    plt.show()
+    #plt.show()
 
 def heatmap_weight_arm(weights):
     savepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','arm_figs')

@@ -21,6 +21,8 @@ from utils.Visualize_mj import uav_visualizer_mj_v4
 from utils.Keyboard import uav_key_handler, key_interface, remove_conflict
 from utils.user_study_logger import UserLogger
 from utils.recorder import Recorder_sync
+
+from data_process.heatmap import heatmap_weight_uav
 import mujoco
 
 #Configuration of log directory
@@ -41,6 +43,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
     target_idx=0
     traj_idx=0
 
+    heatmap_weight_uav(learned_theta,name='init_heatmap.png')
     while True:
 
         print('current theta:', learned_theta)
@@ -117,7 +120,8 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                     num_corr += 1
                     correction_flag = True
                     logger.log_correction(human_corr_str)
-                    time.sleep(0.05)
+                    heatmap_weight_uav(learned_theta,name='heatmap_'+str(num_corr)+'.png')
+                    #time.sleep(0.05)
 
                 # simulation
                 x = uav_env.get_curr_state()
@@ -129,14 +133,14 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
 
                 # recording
                 #recorder.record(correction_flag, human_corr_str)
-                correction_flag = False
-                human_corr_str = None
-
                 # visualization
                 visualizer.render_update()
-
                 if recorder is not None:
-                    recorder.record()
+                    recorder.record(correction_flag, human_corr_str)
+
+                correction_flag = False
+                human_corr_str = None
+                
 
                 uav_env.step(u)
                 time.sleep(0.03)
