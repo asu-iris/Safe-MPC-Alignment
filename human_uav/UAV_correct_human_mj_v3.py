@@ -43,7 +43,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
     target_idx=0
     traj_idx=0
 
-    heatmap_weight_uav(learned_theta,name='init_heatmap.png')
+    heatmap_weight_uav(learned_theta,name='heatmap_0.png')
     while True:
 
         print('current theta:', learned_theta)
