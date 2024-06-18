@@ -86,6 +86,7 @@ class VideoMaker(object):
         video=cv2.VideoWriter(os.path.join(self.path,'demo_merge.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
         text_cnt=0
         text=None
+        corr_num=0
         for i in range(1,n_imgs-1):
             if frames[i] is None:
                 continue
@@ -98,7 +99,8 @@ class VideoMaker(object):
 
             heat_path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','uav_figs')
             heatmap = cv2.imread(os.path.join(heat_path,'heatmap_'+str(corr_num)+'.png'))
-            #print(heatmap.shape)
+            #print('heatmap_'+str(corr_num)+'.png')
+            #print('heatmap_'+str(corr_num)+'.png',heatmap.shape)
             heatmap_small=cv2.resize(heatmap,(200,150))
             img[0:150,440:,:]=heatmap_small
 
@@ -185,6 +187,7 @@ class VideoMaker(object):
         video=cv2.VideoWriter(os.path.join(self.path,'demo_merge.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
         text_cnt=0
         text=None
+        corr_num=0
         for i in range(1,n_imgs-1):
             if frames[i] is None:
                 continue
@@ -195,6 +198,12 @@ class VideoMaker(object):
             #print(hand_img.shape)
             img[330:,440:,:]=hand_img
 
+            heat_path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','arm_figs')
+            heatmap = cv2.imread(os.path.join(heat_path,'heatmap_'+str(corr_num)+'.png'))
+            #print('heatmap_'+str(corr_num)+'.png')
+            #print('heatmap_'+str(corr_num)+'.png',heatmap.shape)
+            heatmap_small=cv2.resize(heatmap,(200,150))
+            img[0:150,440:,:]=heatmap_small
             if text_cnt>0:
                 new_img=cv2.putText(img,text_map[text],(20,420),cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255))
                 video.write(new_img)
@@ -206,17 +215,19 @@ class VideoMaker(object):
             if corrs[i]!='None':
                 text=corrs[i]
                 text_cnt=10
+                if corrs[i]!='reset':
+                    corr_num+=1
 
             
 
 
 
 if __name__=='__main__':
-    # path_arm=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test_arm')
-    # vm_arm=VideoMaker(path_arm,cam_flag=True)
-    # vm_arm.process_arm()
-    path_uav=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test')
-    vm_arm=VideoMaker(path_uav,cam_flag=False)
-    vm_arm.process()
+    path_arm=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test_arm')
+    vm_arm=VideoMaker(path_arm,cam_flag=True)
+    vm_arm.process_arm()
+    # path_uav=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test')
+    # vm_arm=VideoMaker(path_uav,cam_flag=True)
+    # vm_arm.process()
 
 

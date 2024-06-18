@@ -1,6 +1,6 @@
 import numpy as np
 import casadi as cd
-
+# Solver to generate cutting hyperplane
 class cutter(object):
     def __init__(self,name:str) -> None:
         self.name=name
@@ -395,7 +395,7 @@ class cutter_v4(object):
         self.gamma = gamma
         self.g_flag = True
 
-    def from_controller(self, controller):
+    def from_controller(self, controller): #Construct the class from a MPC controller
         self.set_state_dim(controller.x_dim)
         self.set_ctrl_dim(controller.u_dim)
         self.set_dyn(controller.dyn_f)
@@ -404,7 +404,7 @@ class cutter_v4(object):
         assert hasattr(controller, 'g_flag'), 'no safety constraint in controller'
         self.set_g(controller.features, controller.gamma)
 
-    def construct_graph(self, horizon):
+    def construct_graph(self, horizon): # Construct the gradient functions in the expr of hyperplanes
         assert hasattr(self, 'x_dim'), "missing x_dim"
         assert hasattr(self, 'u_dim'), "missing u_dim"
         assert hasattr(self, 'dyn_f'), "missing dyn_f"
@@ -469,7 +469,7 @@ class cutter_v4(object):
         phi_Jacobi = cd.jacobian(phi, traj_u_flat)
         self.phi_Jacobi_func = cd.Function('phi_jacobi', [init_state, traj_u_flat], [phi_Jacobi])
 
-    def calc_planes(self, weights, init_state, traj_xu, human_corr, target_x):
+    def calc_planes(self, weights, init_state, traj_xu, human_corr, target_x): # calculate hyperplanes
         traj_u = []
         for i in range(self.horizon):
             start_idx = i * (self.x_dim + self.u_dim) + self.x_dim

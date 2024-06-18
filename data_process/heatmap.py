@@ -56,9 +56,9 @@ def heatmap_weight_uav(weights, path=os.path.join(os.path.abspath(os.path.dirnam
 
     #plt.show()
 
-def heatmap_weight_arm(weights):
-    savepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','arm_figs')
-    g_func=gen_eval_func_arm(weights=weights,z_min=0.2,z_max=0.9, num_z=10, bias=-0.8, epsilon_z=12, epsilon_q=1.8)
+def heatmap_weight_arm(weights, path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','arm_figs'),name='heatmap.png'):
+    #savepath=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','arm_figs')
+    g_func=gen_eval_func_arm(weights=weights,z_min=0.2,z_max=0.9, num_z=10, bias=-0.4, epsilon_z=12, epsilon_q=1.8)
     theta = np.linspace(-np.pi/4, 3*np.pi/4, 100)
     z = np.linspace(0.2, 0.9, 100)
     T,Z = np.meshgrid(theta, z)
@@ -70,7 +70,7 @@ def heatmap_weight_arm(weights):
 
     plt.figure(figsize=(8, 6))
     contour = plt.contour(T, Z, G, levels=[0.0], colors='black', linewidths=2, linestyles='dashed')
-    plt.pcolormesh( T, Z, G, cmap='RdBu')
+    plt.pcolormesh( T, Z, G, cmap='RdBu_r',vmin=-5,vmax=10)
     cbar=plt.colorbar(label='Function Value')
     cbar.ax.tick_params(labelsize=20) 
     cbar.set_label('g Value',size=20)
@@ -80,15 +80,15 @@ def heatmap_weight_arm(weights):
     plt.xticks(fontsize=20)
     plt.yticks(fontsize=20)
     plt.tight_layout()
+    plt.savefig(os.path.join(path,name))
+    #plt.show()
 
-    plt.show()
 
+arm_weights=np.array([ 0.8605393 ,  0.8317794 ,  1.11404594,  0.48366286, -0.83400422,
+       -1.20513047, -0.080032  , -0.34014744,  0.37021907,  0.97919927,
+        1.03243613,  1.04706619, -0.06139236, -1.80106347,  1.84331149,
+        2.98620837,  2.9307057 ,  1.16053416,  1.        ,  1.        ])
+print(arm_weights)
+heatmap_weight_arm(arm_weights)
 
-# arm_weights=np.array([ 0.8605393 ,  0.8317794 ,  1.11404594,  0.48366286, -0.83400422,
-#        -1.20513047, -0.080032  , -0.34014744,  0.37021907,  0.97919927,
-#         1.03243613,  1.04706619, -0.06139236, -1.80106347,  1.84331149,
-#         2.98620837,  2.9307057 ,  1.16053416,  1.        ,  1.        ])
-# print(arm_weights)
-# heatmap_weight_arm(arm_weights)
-
-heatmap_weight_uav(weights_learned)
+#heatmap_weight_uav(weights_learned)

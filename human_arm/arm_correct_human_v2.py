@@ -23,6 +23,7 @@ import mujoco
 from utils.recorder import Recorder_Arm_v2
 from utils.user_study_logger import UserLogger
 
+from data_process.heatmap import heatmap_weight_arm
 #Configuration of log directory
 import argparse
 
@@ -47,7 +48,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
     target_idx=0
     traj_idx=0
     corr_num=0
-
+    heatmap_weight_arm(learned_theta,name='heatmap_0.png')
     while True:
         target_x=target_pos_list[target_idx]+target_quat
         visualizer.set_target_pos(target_pos_list[target_idx])
@@ -91,6 +92,8 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     #print('correction', human_corr)
                     corr_num+=1
                     correction_flag=True
+                    
+                    # Core Part: Use Human Corrections to Update the params
                     human_corr_e = np.concatenate([human_corr.reshape(-1, 1), np.zeros((6 * (Horizon - 1), 1))])
                     h, b, h_phi, b_phi = hb_calculator.calc_planes(learned_theta, x, controller.opt_traj,
                                                                    human_corr=human_corr_e,
@@ -108,6 +111,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
 
                     num_corr += 1
                     logger.log_correction(human_corr_str)
+                    heatmap_weight_arm(learned_theta,name='heatmap_'+str(num_corr)+'.png')
                     time.sleep(0.1)
                 
                 # simulation
@@ -125,8 +129,9 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                 correction_flag=False
                 human_corr_str=None
                 arm_env.step(u)
-                recorder.record_cam()
-                #time.sleep(0.05)
+                if recorder is not None:
+                    recorder.record_cam()
+                time.sleep(0.05)
 
             else:
                 while PAUSE[0]:
@@ -196,8 +201,8 @@ hb_calculator.construct_graph(horizon=Horizon)
 
 mve_calc = mvesolver('uav_mve', theta_dim)
 mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)
-recorder=Recorder_Arm_v2(env,cam_flag=True)
-#recorder=None
+#recorder=Recorder_Arm_v2(env,cam_flag=True)
+recorder=None
 #rec.record_mj()
 
 # logger
