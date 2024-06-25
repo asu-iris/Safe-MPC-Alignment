@@ -29,7 +29,7 @@ class mvesolver(object):
         self.constraint_a.append(np.reshape(np.array(a),(-1,1)))
         self.constraint_b.append(float(b))
 
-    def solve(self,tolerance=0.001):
+    def solve(self,tolerance=0.001): #solve the MVE and its center
         C = cp.Variable((self.dim, self.dim), symmetric=True)
         d = cp.Variable(self.dim)
         # create the constraints
@@ -46,7 +46,7 @@ class mvesolver(object):
             raise RuntimeError('MVEsolver: unbounded region')
         return d.value, C.value
     
-    def draw(self, C=None, d=None, ref=None):
+    def draw(self, C=None, d=None, ref=None): #plot 2D edges and MVE
         theta = np.arange(-np.pi-0.1,np.pi+0.1,0.1)
         range_x = np.arange(self.lb[0]-1,self.ub[0]+1,0.1)
         range_y = np.arange(self.lb[1]-1,self.ub[1]+1,0.1)

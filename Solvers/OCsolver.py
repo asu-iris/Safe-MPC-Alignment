@@ -1,6 +1,6 @@
 import numpy as np
 import casadi as cd
-
+# Optimal control Solver using casadi
 class ocsolver(object):
     def __init__(self,name:str) -> None:
         self.name=name
@@ -765,7 +765,7 @@ class ocsolver_v4(object):
 
         self.opt_traj = None
 
-    def set_state_param(self, x_dim: int, x_lb=None, x_ub=None):
+    def set_state_param(self, x_dim: int, x_lb=None, x_ub=None): #dim and bound for x
         self.x_dim = x_dim
         if x_lb:
             self.x_lb = x_lb
@@ -776,12 +776,12 @@ class ocsolver_v4(object):
         else:
             self.x_ub = self.x_dim * [1e20]
 
-    def set_ctrl_param(self, u_dim: int, u_lb: list, u_ub: list):
+    def set_ctrl_param(self, u_dim: int, u_lb: list, u_ub: list): #dim and bound for u
         self.u_dim = u_dim
         self.u_lb = u_lb.copy()
         self.u_ub = u_ub.copy()
 
-    def set_dyn(self, dyn_f: cd.Function):
+    def set_dyn(self, dyn_f: cd.Function): #dynamics
         self.dyn_f = dyn_f
 
     def set_step_cost(self, step_cost: cd.Function):
@@ -790,12 +790,12 @@ class ocsolver_v4(object):
     def set_term_cost(self, term_cost: cd.Function):
         self.terminal_cost = term_cost
 
-    def set_g(self, Features: cd.Function, gamma=0.001):
+    def set_g(self, Features: cd.Function, gamma=0.001): # safety constraint
         self.features = Features
         self.gamma = gamma
         self.g_flag = True
 
-    def construct_prob(self, horizon):  # joint optimization
+    def construct_prob(self, horizon):  # joint optimization, construct optimal control problem
         assert hasattr(self, 'x_dim'), "missing x_dim"
         assert hasattr(self, 'u_dim'), "missing u_dim"
         assert hasattr(self, 'u_lb'), "missing u_lb"
@@ -881,7 +881,7 @@ class ocsolver_v4(object):
                 'g': cd.vertcat(*self.g), 'p': param}
         self.solver_func = cd.nlpsol('solver', 'ipopt', prob, opts)
 
-    def solve(self, init_state: np.ndarray, weights: np.ndarray = 0.0, target_x: np.ndarray=0.0):
+    def solve(self, init_state: np.ndarray, weights: np.ndarray = 0.0, target_x: np.ndarray=0.0): # solve the problem
 
         if hasattr(self, "warm_start_sol") and self.warm_start_sol is not None:
             self.initial_guess = self.warm_start_sol
@@ -914,7 +914,7 @@ class ocsolver_v4(object):
         # print('g_value', g_value)
         return w_opt
 
-    def control(self, init_state, weights=0.0, target_x=0.0):
+    def control(self, init_state, weights=0.0, target_x=0.0): #wrapper for solve, only pick the first control value
         w_opt = self.solve(init_state, weights, target_x)
         return w_opt[0:self.u_dim]
 

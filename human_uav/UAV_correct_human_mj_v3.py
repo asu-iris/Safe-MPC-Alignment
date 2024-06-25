@@ -95,7 +95,8 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
 
                     if MSG[0] == 'reset':
                         MSG[0] = None
-                        #recorder.record(True, 'reset')
+                        if recorder is not None:
+                            recorder.record(True, 'reset')
                         break
                     human_corr = key_interface(MSG)
                     human_corr_str = MSG[0]
@@ -103,6 +104,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
 
                     print('correction', human_corr)
                     human_corr_e = np.concatenate([human_corr.reshape(-1, 1), np.zeros((4 * (Horizon - 1), 1))])
+                    # Core Part: Use Human Corrections to Update the params
                     h, b, h_phi, b_phi = hb_calculator.calc_planes(learned_theta, x, controller.opt_traj,
                                                                    human_corr=human_corr_e,
                                                                    target_r=target_r)
@@ -237,8 +239,8 @@ logger = UserLogger(user=USER_ID,trail=TRIAL_ID,dir=logger_path)
 
 #########################################################################################
 # recorder
-recorder = Recorder_sync(env=uav_env, controller=controller,visualizer=visualizer)
-#recorder = None
+#recorder = Recorder_sync(env=uav_env, controller=controller,visualizer=visualizer,cam_flag=True)
+recorder = None
 #########################################################################################
 flag, cnt, weights = mainloop(learned_theta=learned_theta,
                      uav_env=uav_env,
