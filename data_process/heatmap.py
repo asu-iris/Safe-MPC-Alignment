@@ -46,7 +46,7 @@ def heatmap_weight_uav(weights, path=os.path.join(os.path.abspath(os.path.dirnam
     cbar=plt.colorbar(label='Function Value')
     cbar.ax.tick_params(labelsize=20) 
     cbar.set_label('g Value',size=20)
-    plt.title('Heatmap of Learned constraint: UAV', fontsize=20)
+    plt.title('Heatmap of Learned constraint: Drone', fontsize=20)
     plt.xlabel('y', fontsize=20)
     plt.ylabel('z', fontsize=20)
     plt.xticks(fontsize=20)

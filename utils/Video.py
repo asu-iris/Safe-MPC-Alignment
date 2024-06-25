@@ -116,6 +116,74 @@ class VideoMaker(object):
                 if corrs[i]!='reset':
                     corr_num+=1
 
+    def process_uav_sep(self):
+        f=open(os.path.join(self.path,'timestamps.txt'),'r')
+        time_stamp_lines=f.readlines()
+        n_imgs=len(time_stamp_lines)
+        corrs=[]
+        for i in range(n_imgs):
+            corr=time_stamp_lines[i].split(' ')[-1].replace('\n','')
+            corrs.append(corr)
+        # video for mj and heatmap
+        frames=[None]
+        aux_frames=[None]
+        for i in range(1,n_imgs-1):
+            filename=os.path.join(self.path,'mj_'+str(i)+'.jpg')
+            filename_aux=os.path.join(self.path,'aux_'+str(i)+'.jpg')
+            if corrs[i-1] != 'reset':
+                frames.append(cv2.imread(filename))
+                aux_frames.append(cv2.imread(filename_aux))
+            else:
+                frames.append(None)
+                aux_frames.append(None)
+            #frames.append(cv2.imread(filename))
+        print('valid frames mj', sum(x is not None for x in frames))
+        video=cv2.VideoWriter(os.path.join(self.path,'demo.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
+        video_aux=cv2.VideoWriter(os.path.join(self.path,'demo_aux.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
+        video_heat=cv2.VideoWriter(os.path.join(self.path,'demo_heat.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
+        corr_num=0
+        for i in range(1,n_imgs-1):
+            if frames[i] is None:
+                continue
+
+            img=frames[i]
+            img_aux=aux_frames[i]
+
+            heat_path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','heatmap_2')
+            heatmap = cv2.imread(os.path.join(heat_path,'heatmap_'+str(corr_num)+'.png'))
+            #print(heatmap.shape)
+            heatmap_small=cv2.resize(heatmap,self.size)
+            video.write(img)
+            video_aux.write(img_aux)
+            video_heat.write(heatmap_small)
+
+            if corrs[i]!='None':
+                if corrs[i]!='reset':
+                    corr_num+=1
+        
+        video.release()
+        video_aux.release()
+        video_heat.release()
+
+        frames_hand=[None]
+        for i in range(1,n_imgs-1):
+            filename=os.path.join(self.path,'cam_'+str(i+1)+'.jpg')
+            if corrs[i-1] != 'reset':
+                frames_hand.append(cv2.imread(filename))
+            
+            else:
+                frames_hand.append(None)
+            #frames_hand.append(cv2.imread(filename))
+        print('valid frames cam', sum(x is not None for x in frames_hand))
+        video=cv2.VideoWriter(os.path.join(self.path,'hand.avi'),cv2.VideoWriter_fourcc(*'MJPG'),self.fps,self.size)
+        for i in range(1,n_imgs-1):
+            #print(i)
+            if frames_hand[i] is None:
+                continue
+            video.write(frames_hand[i])
+
+        video.release()
+
     def process_arm(self):
         f=open(os.path.join(self.path,'timestamps.txt'),'r')
         time_stamp_lines=f.readlines()
@@ -212,11 +280,11 @@ class VideoMaker(object):
 
 
 if __name__=='__main__':
-    # path_arm=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test_arm')
-    # vm_arm=VideoMaker(path_arm,cam_flag=True)
-    # vm_arm.process_arm()
-    path_uav=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test')
-    vm_arm=VideoMaker(path_uav,cam_flag=False)
-    vm_arm.process()
+    path_uav=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','uav_figs_video_2')
+    vm_uav=VideoMaker(path_uav,cam_flag=True,fps=12)
+    vm_uav.process_uav_sep()
+    # path_uav=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','test')
+    # vm_arm=VideoMaker(path_uav,cam_flag=False)
+    # vm_arm.process()
 
 
