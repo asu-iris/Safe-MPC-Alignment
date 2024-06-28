@@ -43,7 +43,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
     target_idx=0
     traj_idx=0
 
-    heatmap_weight_uav(learned_theta,name='heatmap_0.png')
+    #heatmap_weight_uav(learned_theta,name='heatmap_0.png')
     while True:
 
         print('current theta:', learned_theta)
@@ -122,7 +122,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                     num_corr += 1
                     correction_flag = True
                     logger.log_correction(human_corr_str)
-                    heatmap_weight_uav(learned_theta,name='heatmap_'+str(num_corr)+'.png')
+                    #heatmap_weight_uav(learned_theta,name='heatmap_'+str(num_corr)+'.png')
                     #time.sleep(0.05)
 
                 # simulation
@@ -252,5 +252,5 @@ flag, cnt, weights = mainloop(learned_theta=learned_theta,
                      recorder=recorder)
 print(flag, cnt)
 logger.log_termination(flag, cnt,weights)
-recorder.write()
+#recorder.write()
 sys.exit()
