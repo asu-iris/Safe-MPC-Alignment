@@ -1,3 +1,8 @@
+"""
+The code for simulated arm reaching game
+to run: python arm_correct_human_v2.py
+"""
+
 import sys
 import os
 import time
@@ -40,8 +45,9 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
     global PAUSE, MSG
     num_corr = 0
     #target_end_pos=[0.35,-0.5,0.5] #[-0.6,-0.5,0.5]
-    #target_pos_list=[[-0.6,-0.5,0.4],[-0.6,-0.5,0.5],[-0.6,-0.5,0.6]]
-    target_pos_list=[[-0.6,-0.5,0.6],[-0.6,-0.5,0.6],[-0.6,-0.5,0.6]]
+    #Three Different Target Positions
+    target_pos_list=[[-0.6,-0.5,0.4],[-0.6,-0.5,0.5],[-0.6,-0.5,0.6]]
+    #target_pos_list=[[-0.6,-0.5,0.6],[-0.6,-0.5,0.6],[-0.6,-0.5,0.6]]
     target_quat=[0.0,-0.707,0.0,0.707]
     #target_quat=[-0.36,0.6,0.36,-0.6]
     

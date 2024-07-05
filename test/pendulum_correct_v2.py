@@ -1,3 +1,8 @@
+"""
+The code for watching the performance of the algorithm in simulated pendulum experiment.
+python pendulum_correct_v2.py
+"""
+
 import os
 import sys
 import casadi as cd
@@ -198,9 +203,9 @@ def eval_theta(theta,controller,id=0):
     plt.savefig('../Data/pendulum/traj_'+str(id)+'.png')
     plt.show(block=False)
 
-for i in range(0,len(theta_log),3):
-    print(i)
-    eval_theta(theta_log[i],controller,id=i)
+# for i in range(0,len(theta_log),3):
+#     print(i)
+#     eval_theta(theta_log[i],controller,id=i)
 eval_theta(theta_log[-1],controller,id=len(theta_log)-1)
 
 def plot_theta_route(theta_log,lbs,ubs):
@@ -218,7 +223,7 @@ def plot_theta_route(theta_log,lbs,ubs):
 
     plt.show(block=False)
 
-plot_theta_route(theta_log,lbs,ubs)
+#plot_theta_route(theta_log,lbs,ubs)
 input()
 #p_env.show_animation()
 

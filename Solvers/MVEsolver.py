@@ -3,7 +3,7 @@ import cvxpy as cp
 from matplotlib import pyplot as plt
 
 import os
-
+# MVE calculation based on cvxpy
 class mvesolver(object):
     def __init__(self,name,dim,path=os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),'Data','mve_checkpoint')) -> None:
         self.name=name

@@ -1,3 +1,8 @@
+"""
+The code for simulated drone navigation game
+to run: python UAV_correct_human_mj_v3.py
+"""
+
 import time
 from pynput import keyboard
 import sys
@@ -62,7 +67,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
         init_x[2] = 0.5
         # print('init state', init_x.T)
 
-
+        # Three Different Target Positions
         target_r_set = [np.array([19, 1, 9]), np.array([19, 5, 9]), np.array([19, 9, 9])]
         target_r=target_r_set[target_idx]
 
