@@ -3,16 +3,19 @@
 ## Run the experiments in the paper
 To run the code of the simulated pendulum experiment:
 ```
+cd test
 python pendulum_correct_v2.py
 ```
 
 To run the code of mujoco drone navigation game:
 ```
+cd huamn_uav
 python UAV_correct_human_mj_v3.py
 ```
 
 To run the code of mujoco arm reaching game:
 ```
+cd human_arm
 python arm_correct_human_v2.py
 ```
 
