@@ -27,7 +27,7 @@ from utils.Keyboard import uav_key_handler, key_interface, remove_conflict
 from utils.user_study_logger import UserLogger
 from utils.recorder import Recorder_sync
 
-from data_process.heatmap import heatmap_weight_uav
+#from data_process.heatmap import heatmap_weight_uav
 import mujoco
 
 #Configuration of log directory
