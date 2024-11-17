@@ -110,6 +110,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                     print('correction', human_corr)
                     human_corr_e = np.concatenate([human_corr.reshape(-1, 1), np.zeros((4 * (Horizon - 1), 1))])
                     # Core Part: Use Human Corrections to Update the params
+                    st = time.time()
                     h, b, h_phi, b_phi = hb_calculator.calc_planes(learned_theta, x, controller.opt_traj,
                                                                    human_corr=human_corr_e,
                                                                    target_r=target_r)
@@ -120,7 +121,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                         learned_theta, C = mve_calc.solve()
                     except:
                         return False, num_corr ,learned_theta
-
+                    print('calc time',time.time() - st)
                     print('vol', np.log(np.linalg.det(C)))
 
                     # mve_calc.savefig(C,learned_theta,np.array([-5,-5]),dir='D:\\ASU_Work\\Research\\learn safe mpc\\experiment\\results\\cut_figs\\' +str(num_corr)+'.png')

@@ -116,7 +116,7 @@ class Correction_Agent(object):
             if np.random.uniform(0,1)<self.p:
                 #print('agent correction')
                 correction=self.correct(traj_xu).full()
-                correction[1:]=0
+                correction[self.u_dim:]=0
                 #return self.correct(traj_xu)
                 return correction
             else:

@@ -9,7 +9,7 @@ python pendulum_correct_v2.py
 
 To run the code of mujoco drone navigation game:
 ```
-cd huamn_uav
+cd human_uav
 python UAV_correct_human_mj_v3.py
 ```
 

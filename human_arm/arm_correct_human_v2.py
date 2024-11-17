@@ -101,6 +101,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     
                     # Core Part: Use Human Corrections to Update the params
                     human_corr_e = np.concatenate([human_corr.reshape(-1, 1), np.zeros((6 * (Horizon - 1), 1))])
+                    st = time.time()
                     h, b, h_phi, b_phi = hb_calculator.calc_planes(learned_theta, x, controller.opt_traj,
                                                                    human_corr=human_corr_e,
                                                                    target_x=target_x)
@@ -114,7 +115,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
                     
                     #print('theta', learned_theta)
                     #print('vol', np.log(np.linalg.det(C)))
-
+                    print('calc time',time.time() - st)
                     num_corr += 1
                     logger.log_correction(human_corr_str)
                     heatmap_weight_arm(learned_theta,name='heatmap_'+str(num_corr)+'.png')

@@ -486,7 +486,7 @@ class ocsolver_v2(object):
         assert hasattr(self, 'terminal_cost'), "terminal_cost"
 
         # self.init_state_t=SX.sym('init_x_t',self.x_dim)
-
+        self.horizon=horizon
         # pre-define lists for casadi solver, joint optimization of x,u
         self.w = []
 
@@ -556,7 +556,7 @@ class ocsolver_v2(object):
         self.param_func = cd.Function('param_func', [x0, weight_param], [param])
 
         # constuct solver
-        opts = {'ipopt.print_level': self.print_level, 'ipopt.sb': 'yes', 'print_time': self.print_level}
+        opts = {'ipopt.print_level': self.print_level, 'ipopt.sb': 'yes', 'print_time': self.print_level,'ipopt.max_iter':50}
         prob = {'f': B, 'x': cd.vertcat(*self.w),
                 'g': cd.vertcat(*self.g), 'p': param}
         self.solver_func = cd.nlpsol('solver', 'ipopt', prob, opts)
@@ -566,7 +566,13 @@ class ocsolver_v2(object):
         if hasattr(self, "warm_start_sol") and self.warm_start_sol is not None:
             self.initial_guess = self.warm_start_sol
         else:
-            self.initial_guess = cd.vcat(self.w_0)
+            tmp_w_0 = []
+            for i in range(self.horizon):
+                tmp_w_0+=[0.5 * (x + y) for x, y in zip(self.u_lb, self.u_ub)]
+                tmp_w_0+=list(init_state)
+
+            #self.initial_guess = cd.vcat(self.w_0)
+            self.initial_guess = cd.vcat(tmp_w_0)
 
         sol = self.solver_func(x0=self.initial_guess,
                                lbx=self.w_lb, ubx=self.w_ub,
@@ -587,6 +593,7 @@ class ocsolver_v2(object):
         g_value = self.g_func(init_state, w_opt, weights)
         if hasattr(self, 'g_flag') and g_value > 0:
             print('g_value', g_value)
+            #print(self.opt_traj)
             raise Exception("violation appears in trajectory solved")
         # print('g_value', g_value)
         return w_opt

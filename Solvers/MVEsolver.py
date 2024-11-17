@@ -136,6 +136,12 @@ class mvesolver(object):
         self.constraint_b=list(B)
         d,C=self.solve()
         return d
+    
+    def get_constraints(self):
+        A = np.concatenate(self.constraint_a,axis=1)
+        #print(A)
+        B = np.array(self.constraint_b).reshape(-1,1)
+        return A.T, B
 
 if __name__=='__main__':
     testsol=mvesolver('test',2)
