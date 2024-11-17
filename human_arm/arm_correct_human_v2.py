@@ -28,7 +28,7 @@ import mujoco
 from utils.recorder import Recorder_Arm_v2
 from utils.user_study_logger import UserLogger
 
-from data_process.heatmap import heatmap_weight_arm
+#from data_process.heatmap import heatmap_weight_arm
 #Configuration of log directory
 import argparse
 
@@ -54,7 +54,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
     target_idx=0
     traj_idx=0
     corr_num=0
-    heatmap_weight_arm(learned_theta,name='heatmap_0.png')
+    #heatmap_weight_arm(learned_theta,name='heatmap_0.png')
     while True:
         target_x=target_pos_list[target_idx]+target_quat
         visualizer.set_target_pos(target_pos_list[target_idx])
@@ -117,7 +117,7 @@ def mainloop(learned_theta, arm_env, controller, hb_calculator, mve_calc, visual
 
                     num_corr += 1
                     logger.log_correction(human_corr_str)
-                    heatmap_weight_arm(learned_theta,name='heatmap_'+str(num_corr)+'.png')
+                    #heatmap_weight_arm(learned_theta,name='heatmap_'+str(num_corr)+'.png')
                     time.sleep(0.1)
                 
                 # simulation
