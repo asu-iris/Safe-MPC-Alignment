@@ -119,7 +119,8 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                     mve_calc.add_constraint(h_phi, b_phi[0])
                     try:
                         learned_theta, C = mve_calc.solve()
-                    except:
+                    except Exception as e:
+                        print(e)
                         return False, num_corr ,learned_theta
                     print('calc time',time.time() - st)
                     print('vol', np.log(np.linalg.det(C)))
@@ -138,6 +139,7 @@ def mainloop(learned_theta, uav_env, controller, hb_calculator, mve_calc, visual
                     u = controller.control(x, weights=learned_theta, target_r=target_r)
                 except:
                     return False, num_corr ,learned_theta
+                    
 
                 # recording
                 #recorder.record(correction_flag, human_corr_str)

@@ -46,7 +46,7 @@ def heatmap_weight_uav(weights, path=os.path.join(os.path.abspath(os.path.dirnam
     cbar=plt.colorbar(label='Function Value')
     cbar.ax.tick_params(labelsize=20) 
     cbar.set_label('g Value',size=20)
-    plt.title('Heatmap of Learned constraint: Drone', fontsize=20)
+    #plt.title('Heatmap of Learned constraint: Drone', fontsize=20)
     plt.xlabel('y', fontsize=20)
     plt.ylabel('z', fontsize=20)
     plt.xticks(fontsize=20)
@@ -74,7 +74,7 @@ def heatmap_weight_arm(weights, path=os.path.join(os.path.abspath(os.path.dirnam
     cbar=plt.colorbar(label='Function Value')
     cbar.ax.tick_params(labelsize=20) 
     cbar.set_label('g Value',size=20)
-    plt.title('Heatmap of Learned constraint: ARM', fontsize=20)
+    #plt.title('Heatmap of Learned constraint: ARM', fontsize=20)
     plt.xlabel('theta', fontsize=20)
     plt.ylabel('z', fontsize=20)
     plt.xticks(fontsize=20)
@@ -84,11 +84,11 @@ def heatmap_weight_arm(weights, path=os.path.join(os.path.abspath(os.path.dirnam
     #plt.show()
 
 
-arm_weights=np.array([ 0.8605393 ,  0.8317794 ,  1.11404594,  0.48366286, -0.83400422,
-       -1.20513047, -0.080032  , -0.34014744,  0.37021907,  0.97919927,
-        1.03243613,  1.04706619, -0.06139236, -1.80106347,  1.84331149,
-        2.98620837,  2.9307057 ,  1.16053416,  1.        ,  1.        ])
-print(arm_weights)
-heatmap_weight_arm(arm_weights)
+# arm_weights=np.array([ 0.8605393 ,  0.8317794 ,  1.11404594,  0.48366286, -0.83400422,
+#        -1.20513047, -0.080032  , -0.34014744,  0.37021907,  0.97919927,
+#         1.03243613,  1.04706619, -0.06139236, -1.80106347,  1.84331149,
+#         2.98620837,  2.9307057 ,  1.16053416,  1.        ,  1.        ])
+# print(arm_weights)
+# heatmap_weight_arm(arm_weights)
 
-#heatmap_weight_uav(weights_learned)
+heatmap_weight_uav(weights_learned)

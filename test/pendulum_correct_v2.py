@@ -192,20 +192,20 @@ def eval_theta(theta,controller,id=0):
     plt.xticks(fontsize=20)
     plt.xlim(-0.5,3.5)
     plt.ylim(-0.5,5)
-    plt.scatter(np.array(p_env.x_traj)[:,0],np.array(p_env.x_traj)[:,1],s=30,label='trajectory with params')
-    plt.plot(np.linspace(0,3.2,100), -0.6*(np.linspace(0,3.2,100)-5),linewidth=5.0,color='r',label='ground truth constraint')
+    plt.scatter(np.array(p_env.x_traj)[:,0],np.array(p_env.x_traj)[:,1],s=30,label='Trajectory')
+    plt.plot(np.linspace(0,3.2,100), -0.6*(np.linspace(0,3.2,100)-5),linewidth=5.0,color='r',label='Ground Truth')
     if id > 0:
-        plt.plot(np.linspace(0,3.2,100), (3-theta[0]*np.linspace(0,3.2,100))/theta[1],linewidth=5.0,color='orange',label='learned constraint')
-    plt.legend(fontsize=15)
+        plt.plot(np.linspace(0,3.2,100), (3-theta[0]*np.linspace(0,3.2,100))/theta[1],linewidth=5.0,color='orange',label='Learned Constraint')
+    plt.legend(fontsize=18)
     plt.subplots_adjust(bottom=0.15)
     plt.tight_layout()
     plt.grid()
     plt.savefig('../Data/pendulum/traj_'+str(id)+'.png')
     plt.show(block=False)
 
-# for i in range(0,len(theta_log),3):
-#     print(i)
-#     eval_theta(theta_log[i],controller,id=i)
+for i in range(0,len(theta_log),3):
+    print(i)
+    eval_theta(theta_log[i],controller,id=i)
 eval_theta(theta_log[-1],controller,id=len(theta_log)-1)
 
 def plot_theta_route(theta_log,lbs,ubs):
