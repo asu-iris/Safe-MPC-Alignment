@@ -1,0 +1,50 @@
+<mujoco model="CF2 scene">
+  <include file="cf2.xml" />
+
+  <statistic center="0 0 0.1" extent="0.2" meansize=".05" />
+
+  <visual>
+    
+    <rgba haze="0.15 0.25 0.35 0" />
+    <global azimuth="-20" elevation="-20" ellipsoidinertia="true" />
+    <map zfar="1000" />
+  </visual>
+
+  <asset>
+    <mesh name="tunnel" file="tube_thick.obj" scale="1.0 1.0 1.0" />
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072" />
+    
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.1 0.1 0.1" rgb2="0.2 0.2 0.2" markrgb="0.8 0.8 0.8" width="300" height="300" />
+    
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.0" />
+  </asset>
+
+  <worldbody>
+    <light diffuse="1 1 1" ambient="1 1 1" pos="0 0 100" dir="0 0 -1" directional="false" castshadow="false" />
+    
+    
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane" />
+    <site name="x_axis" size="0.005" type="cylinder" fromto="0 0 0 1 0 0" rgba="1 0 0 1" />  
+    <site name="y_axis" size="0.005" type="cylinder" fromto="0 0 0 0 1 0" rgba="0 1 0 1" />  
+    <site name="z_axis" size="0.005" type="cylinder" fromto="0 0 0 0 0 1" rgba="0 0 1 1" />  
+
+    <site name="target" size="0.2" type="sphere" pos="15 0 10" rgba="1 1 1 1" />
+
+    <camera name="cam_aux" pos="-3.429 -18.876 13.649" xyaxes="0.874 -0.486 -0.000 0.179 0.321 0.930" />
+    <camera name="cam_traj_1" pos="-7.863 -0.826 23.122" xyaxes="0.020 -1.000 0.000 0.737 0.014 0.676" />
+    <camera name="cam_traj_2" pos="7.041 -14.560 20.718" xyaxes="1.000 -0.031 -0.000 0.021 0.691 0.722" />
+    <camera name="cam_traj_3" pos="-11.538 -0.602 8.690" xyaxes="0.046 -0.999 -0.000 0.161 0.007 0.987" />
+
+
+    <body name="tunnel" pos="0.0 0.0 0.0" quat="1 0 0 0">
+         <geom name="tunnel" type="mesh" mesh="tunnel" pos="-0.0 0.0 0.029" quat="1 0 0 0" rgba="1 1 1 0.05" />
+    </body>
+
+
+  <body name="trajectory_0" pos="0 0 0"><geom type="capsule" fromto="0.0018071721150837395 0.00035445464952582525 5.023489859848956 0.014547376717637828 0.003091979699008576 5.045566316776575" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="0.014547376717637828 0.003091979699008576 5.045566316776575 0.07661255485763852 0.019501064945579672 5.087633292239033" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="0.07661255485763852 0.019501064945579672 5.087633292239033 0.18887974983262193 0.04951837940775483 5.141485497704365" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="0.18887974983262193 0.04951837940775483 5.141485497704365 0.32683566706490963 0.08900978324353101 5.181606866577063" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="0.32683566706490963 0.08900978324353101 5.181606866577063 0.4802636348271526 0.14189108778117526 5.231036348529384" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="0.4802636348271526 0.14189108778117526 5.231036348529384 0.6274681827980678 0.2014597138442237 5.280749237322678" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="0.6274681827980678 0.2014597138442237 5.280749237322678 0.7683563957678538 0.2587981319381996 5.329568015306759" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="0.7683563957678538 0.2587981319381996 5.329568015306759 0.9087895647317337 0.3107676641331657 5.382725971753927" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="0.9087895647317337 0.3107676641331657 5.382725971753927 1.0517376318277816 0.3584811128443673 5.441341669027419" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="1.0517376318277816 0.3584811128443673 5.441341669027419 1.1890264784259343 0.40236669359767535 5.484141300055087" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="1.1890264784259343 0.40236669359767535 5.484141300055087 1.3279729111372809 0.4445765624935224 5.529318448391913" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="1.3279729111372809 0.4445765624935224 5.529318448391913 1.469741634613172 0.48392889758875224 5.581131923988946" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="1.469741634613172 0.48392889758875224 5.581131923988946 1.6028987947477733 0.5233720513969012 5.62907498968429" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="1.6028987947477733 0.5233720513969012 5.62907498968429 1.7277789410934903 0.5681704525200372 5.682561063448643" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="1.7277789410934903 0.5681704525200372 5.682561063448643 1.8481122433555568 0.6129794784314608 5.726086493330854" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="1.8481122433555568 0.6129794784314608 5.726086493330854 1.9850650757411386 0.6489786990703482 5.787360707957356" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="1.9850650757411386 0.6489786990703482 5.787360707957356 2.135480982759047 0.6715162430498381 5.877207181905166" size="0.1" rgba="0 1 0.0 1" /><geom type="capsule" fromto="2.135480982759047 0.6715162430498381 5.877207181905166 2.252908720469499 0.6890559096883304 5.899153562140846" size="0.1" rgba="0 1 0.0 1" /></body></worldbody>
+
+  <contact>
+    <exclude name="cf2_tunnel" body1="cf2" body2="tunnel" />  
+  </contact>
+
+</mujoco>

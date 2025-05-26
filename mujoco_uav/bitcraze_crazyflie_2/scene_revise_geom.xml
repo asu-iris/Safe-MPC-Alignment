@@ -1,0 +1,54 @@
+<mujoco model="CF2 scene">
+  <include file="cf2.xml"/>
+
+  <statistic center="0 0 0.1" extent="0.2" meansize=".05"/>
+
+  <visual>
+    <!-- <headlight diffuse="0.9 0.9 0.9" ambient="0.3 0.3 0.3" specular="0 0 0"/> -->
+    <rgba haze="0.15 0.25 0.35 0"/>
+    <global azimuth="-20" elevation="-20" ellipsoidinertia="true"/>
+    <map zfar="1000"/>
+  </visual>
+
+  <asset>
+    <mesh name="tunnel" file="tube_thick.obj" scale = "1.0 1.0 1.0"/>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <!-- <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/> -->
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.1 0.1 0.1" rgb2="0.2 0.2 0.2"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <!-- <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/> -->
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.1"/>
+  </asset>
+
+  <worldbody>
+    <light diffuse="1 1 1" ambient="1 1 1" pos="0 0 100" dir="0 0 -1" directional="false" castshadow = "false"/>
+    <!-- <light diffuse="1 1 1" ambient="1 1 1" pos="0 0 1" dir="1 0 0" directional="false"/> -->
+    <!-- <light diffuse="1 1 1" ambient="1 1 1" pos="0 0 1" dir="0 1 0" directional="false"/> -->
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+    <site name="x_axis" size="0.005" type="cylinder" fromto="0 0 0 1 0 0" rgba="1 0 0 1"/>  <!-- X-axis: Red -->
+    <site name="y_axis" size="0.005" type="cylinder" fromto="0 0 0 0 1 0" rgba="0 1 0 1"/>  <!-- Y-axis: Green -->
+    <site name="z_axis" size="0.005" type="cylinder" fromto="0 0 0 0 0 1" rgba="0 0 1 1"/>  <!-- Z-axis: Blue -->
+
+    <site name="target" size="0.2" type="sphere" pos="15 0 10" rgba="1 1 1 1"/>
+
+    <camera name="cam_aux" pos="-3.429 -18.876 13.649" xyaxes="0.874 -0.486 -0.000 0.179 0.321 0.930"/>
+    <camera name="cam_traj_1" pos="-7.863 -0.826 23.122" xyaxes="0.020 -1.000 0.000 0.737 0.014 0.676"/>
+    <camera name="cam_traj_2" pos="7.041 -14.560 20.718" xyaxes="1.000 -0.031 -0.000 0.021 0.691 0.722"/>
+    <camera name="cam_traj_3" pos="-11.538 -0.602 8.690" xyaxes="0.046 -0.999 -0.000 0.161 0.007 0.987"/>
+
+
+    <body name="tunnel" pos="0.0 0.0 0.0" quat="1 0 0 0">
+         <geom name="tunnel" type="mesh" mesh="tunnel"
+            pos="-0.0 0.0 0.029" quat="1 0 0 0" rgba="1 1 1 0.05"
+            />
+    </body>
+
+
+  </worldbody>
+
+  <contact>
+    <exclude name="cf2_tunnel" body1="cf2" body2="tunnel"/>  
+  </contact>
+
+</mujoco>

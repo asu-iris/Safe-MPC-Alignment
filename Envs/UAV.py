@@ -458,6 +458,7 @@ class UAV_env_mj(object):
         self.u_traj = []
 
 
+
 def Quat_Rot(q):
     # Rot = cd.vertcat(
     #        cd.horzcat(1 - 2 * (q[2] ** 2 + q[3] ** 2), 2 * (q[1] * q[2] + q[0] * q[3]), 2 * (q[1] * q[3] - q[0] * q[2])),

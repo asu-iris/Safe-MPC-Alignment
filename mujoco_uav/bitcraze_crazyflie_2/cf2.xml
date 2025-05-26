@@ -66,7 +66,7 @@
   </asset>
 
   <worldbody>
-    <body name="cf2" pos="0 2.0 2.0" childclass="cf2">
+    <body name="cf2" pos="0 0.0 5.0" childclass="cf2">
       <freejoint/>
       <!-- <inertial pos="0 0 0" mass="0.027" diaginertia="2.3951e-5 2.3951e-5 3.2347e-5"/> -->
       <inertial pos="0 0 0" mass="0.1" diaginertia="1e-2 1e-2 1e-2"/>
