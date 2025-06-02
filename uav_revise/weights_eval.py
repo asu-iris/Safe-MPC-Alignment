@@ -72,23 +72,16 @@ controller.construct_prob(horizon=Horizon)
 # init_theta = learned_theta = (hypo_lbs + hypo_ubs) / 2
 ######################################################################################
 
-hypo_lbs = -0.0 * np.ones(10)
-hypo_ubs = 0.16 * np.ones(10)
+hypo_lbs = -0.0 * np.ones(8)
+hypo_ubs = 0.6 * np.ones(8)
 
 hb_calculator = cutter_v3('uav cut')
 hb_calculator.from_controller(controller)
 hb_calculator.construct_graph(horizon=Horizon)
 
-mve_calc = mvesolver('uav_mve', 10)
+mve_calc = mvesolver('uav_mve', 8)
 mve_calc.set_init_constraint(hypo_lbs, hypo_ubs)  # Theta_0
-#########################################################################################
 
-#correction interface
-x_thrust = np.array([-1, 0, 1, 0])
-y_thrust = np.array([0, 1, 0, -1])
-z_thrust = np.array([1, 1, 1, 1])
-
-viewer = mujoco.viewer.launch_passive(uav_env.model,uav_env.data)
 
 init_r = np.array([0.0,0.0,5.0]).reshape(-1, 1)
 init_v = np.zeros((3, 1))
@@ -100,84 +93,83 @@ init_x = np.concatenate([init_r, init_v, init_q, init_w_B], axis=0)
 target_r = np.array([15.0,0.0,10.0])
 target_x = np.concatenate([target_r.reshape(-1,1), init_v, init_q, init_w_B], axis=0)
 
-# init cut
-# phi_init = phi_func_single(init_x)
-# phi_target = phi_func_single(target_x)
-# mve_calc.add_constraint(phi_init[1:], - phi_init[0])
-# mve_calc.add_constraint(phi_target[1:], - phi_target[0])
-weights,C = mve_calc.solve()
-np.save(os.path.join('../Data/uav_revise/weights_vel_long', 'weights_init.npy'),weights)
-# print(weights)
-input()
-
-curve_points = np.load("../Data/uav_revise/curve_points.npy")
-circle_points = np.load("../Data/uav_revise/circle_points.npy")
-
-traj_cnt = 0
-corr_cnt = 0
-while True:
-    rand_init = init_x.copy()
-    # phi_init = phi_func_single(rand_init)
-    # mve_calc.add_constraint(phi_init[1:], - phi_init[0])
-    rand_init[1:3]+= np.random.randn(2,1)*0.1
-    uav_env.set_init_state(rand_init)
+def eval_weights(weights, horizon=Horizon):
+    """
+    Evaluate the weights using the MVE solver.
+    """
+    uav_env.set_init_state(init_x)
     controller.reset_warmstart()
-    traj = []
-    for i in range(500):
+    traj = [uav_env.get_curr_state()]
+    for i in range(100):
         x = uav_env.get_curr_state()
         
         print("current constraint vec", phi_func_single(x))
-
-        uav_p = x[0:3].flatten()
-        dists = np.linalg.norm(circle_points - uav_p,axis = 2)
-        point_id = np.unravel_index(np.argmin(dists), dists.shape)
-        dist = dists[point_id]
-        
+   
         uav_v = x[3:6].flatten()
         print("uav_v", uav_v, np.linalg.norm(uav_v))
 
-        direction = curve_points[point_id[0]]-uav_p
-
-        u = controller.control(x, weights=weights, target_r=target_r)
+        u = controller.control(x, weights= weights, target_r=target_r)
         print("predicted vel",controller.opt_traj[2* 17 + 3:2*17+6])
         # controller.warm_start_sol[7:10] = 0
         print(u)
-        # input()
+
+        uav_env.step(u)
+        traj.append(uav_env.get_curr_state())
+    
+    return np.array(traj)
+
+def eval_weights_long(weights, horizon=Horizon):
+    """
+    Evaluate the weights using the MVE solver.
+    """
+    viewer = mujoco.viewer.launch_passive(uav_env.model,uav_env.data)
+    uav_env.set_init_state(init_x)
+    controller.reset_warmstart()
+    traj = [uav_env.get_curr_state()]
+    for i in range(10000):
+        x = uav_env.get_curr_state()
         
+        print("current constraint vec", phi_func_single(x))
+   
+        uav_v = x[3:6].flatten()
+        print("uav_v", uav_v, np.linalg.norm(uav_v))
 
-        if np.linalg.norm(uav_v)>=0.4:
-            if np.random.rand() < 0.1:
-            # if np.linalg.norm(uav_v) >=1.0:
-            #     break
-                uav_quat = x[6:10].flatten()
-                uav_rot = R.from_quat(uav_quat,scalar_first=True)
-                uav_rot_mat = uav_rot.as_matrix()
-                uav_v_body = uav_rot_mat.T @ uav_v
-                corr = -x_thrust * uav_v_body[0] - y_thrust * uav_v_body[1] - z_thrust*uav_v_body[2]
-                print("vel corr",uav_v_body)
-                corr_e = np.concatenate([corr.reshape(-1, 1), np.zeros((4 * (Horizon - 1), 1))])
-                h, b, h_phi, b_phi = hb_calculator.calc_planes(weights, x, controller.opt_traj,
-                                                                        human_corr=corr_e,
-                                                                        target_r=target_r)
-                print("opt_traj", controller.opt_traj)
-                print(h, b)
-                print(h_phi, b_phi)
-                mve_calc.add_constraint(h, b[0])
-                mve_calc.add_constraint(h_phi, b_phi[0])
+        u = controller.control(x, weights= weights, target_r=target_r)
+        print("predicted vel",controller.opt_traj[2* 17 + 3:2*17+6])
+        # controller.warm_start_sol[7:10] = 0
+        print(u)
 
-                weights, C = mve_calc.solve()
-                print("learned", weights)
-                corr_cnt+=1
-                np.save(os.path.join('../Data/uav_revise/weights_vel_long', 'weights_{}.npy'.format(corr_cnt)),weights)
-
-            elif np.linalg.norm(uav_v)>=0.45:
-                break
-        
         uav_env.step(u)
         traj.append(uav_env.get_curr_state())
         viewer.sync()
-        # time.sleep(0.05)
+    
+    
 
-    # np.save(os.path.join('../Data/uav_revise/traj_poly', 'traj_{}.npy'.format(traj_cnt)),np.array(traj))
-    traj_cnt+=1
-    input()
+
+weights = np.load("../Data/uav_revise/weights_vel_long/weights_init.npy")
+traj = eval_weights(weights, horizon=Horizon)
+traj_list = [np.linalg.norm(traj[:,3:6],axis=1)]
+
+for i in range(1,18):
+    weights = np.load("../Data/uav_revise/weights_vel_long/weights_{}.npy".format(i))
+    traj = eval_weights(weights, horizon=Horizon)
+    traj_list.append(np.linalg.norm(traj[:,3:6],axis=1))
+
+# Visualize the trajectories
+from matplotlib import pyplot as plt
+plt.figure(figsize=(10, 6))
+plt.plot(traj_list[0], label='Initial Weights', linewidth=2.5)
+for i in [6,9,15,17]:
+    plt.plot(traj_list[i], label=f'Weights {i}', linewidth=2.5)
+plt.title('Velocity Norms for Different Weights')
+plt.xlabel('Time Step')
+plt.ylabel('Velocity Norm')
+#horizontal line at 0.5
+plt.axhline(y=0.4, color='black', linestyle='dotted',linewidth=3, label='Correction Threshold (0.4)')
+plt.axhline(y=0.45, color='black', linestyle='dashed',linewidth=3, label='Stop Threshold (0.45)')
+
+plt.legend()
+plt.grid()
+plt.show()
+
+eval_weights_long(weights, horizon=Horizon)

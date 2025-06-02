@@ -637,6 +637,10 @@ class ocsolver_v3(object):
     def set_term_cost(self, term_cost: cd.Function):
         self.terminal_cost = term_cost
 
+    def set_additional_cost(self, additional_cost: cd.Function):
+        self.additional_cost = additional_cost
+        self.additional_cost_flag = True
+
     def set_g(self, Features: cd.Function, gamma=0.001):
         self.features = Features
         self.gamma = gamma
@@ -715,6 +719,10 @@ class ocsolver_v3(object):
             weight_param = cd.SX.sym('feature_weights', 0)
             g_theta = -10000.0
 
+        if hasattr(self, 'additional_cost_flag') and self.additional_cost_flag:
+            additional_cost = self.additional_cost(traj_xu)
+            B = B + additional_cost
+            
         self.g_func = cd.Function('g_func', [x0, cd.vcat(self.w), weight_param], [g_theta])
 
         self.B_func = cd.Function('B_func', [x0, cd.vcat(self.w), weight_param, target_r], [B])

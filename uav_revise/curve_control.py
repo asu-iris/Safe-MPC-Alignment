@@ -101,7 +101,7 @@ while True:
     rand_init[1:3]+= np.random.randn(2,1)*0.05
     uav_env.set_init_state(init_x)
     traj = []
-    for i in range(500):
+    for i in range(5000):
         x = uav_env.get_curr_state()
         
         print("current constraint vec", phi_func_single(x))
@@ -136,6 +136,7 @@ while True:
             mve_calc.add_constraint(h_phi, b_phi[0])
 
             weights, C = mve_calc.solve()
+            np.save(os.path.join('../Data/uav_revise/theta_poly_3.npy'),weights)
             print("learned", weights)
             break
 
@@ -144,6 +145,6 @@ while True:
         viewer.sync()
         # time.sleep(0.05)
 
-    np.save(os.path.join('../Data/uav_revise/traj_poly', 'traj_{}.npy'.format(traj_cnt)),np.array(traj))
+    # np.save(os.path.join('../Data/uav_revise/traj_poly', 'traj_{}.npy'.format(traj_cnt)),np.array(traj))
     traj_cnt+=1
-    input()
+    # input()

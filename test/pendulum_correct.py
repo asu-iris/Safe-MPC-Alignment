@@ -109,7 +109,7 @@ while not termination_flag:
         #print(i)
         u=controller.control(x)
         agent_output=agent.act(controller.opt_traj_t)
-        if agent_output==None:
+        if agent_output is None:
             print('emergency stop')
             break
         elif type(agent_output)==bool:

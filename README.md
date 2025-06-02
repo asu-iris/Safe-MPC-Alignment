@@ -7,6 +7,15 @@ cd test
 python pendulum_correct_v2.py
 ```
 
+To run the code of simulated drone navigation in a tube
+(Assets like spatial points for the tube, neural SDF weights and learned polynomial weights are in uav_revise/assets, change dirs in files accordingly.):
+```
+cd uav_revise
+python curve_control.py # positional constraint, polynomial
+python curve_neural.py # positional constraint, neural features
+python curve_control_v.py # velocity constraint added on positional constraint
+```
+
 To run the code of mujoco drone navigation game:
 ```
 cd human_uav

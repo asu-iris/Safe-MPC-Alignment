@@ -58,7 +58,7 @@ Horizon =  10  # 25
 uav_params = {'gravity': 9.8, 'm': 0.1, 'J_B': 0.01 * np.eye(3), 'l_w': 1.2, 'dt': 0.15, 'c': 1}
 filepath = os.path.join(os.path.abspath(os.path.dirname(os.getcwd())),
                         'mujoco_uav', 'bitcraze_crazyflie_2',
-                        'scene_revise_geom.xml')
+                        'scene_revise_geom_nn.xml')
 print('path', filepath)
 uav_env = UAV_env_mj(filepath, lock_flag=True)
 uav_model = UAV_model(**uav_params)
@@ -160,7 +160,7 @@ while True:
     center_traj = np.concatenate((center_traj,init_x.flatten()))
     controller.reset_warmstart()
     traj = []
-    for i in range(300):
+    for i in range(5000):
         x = uav_env.get_curr_state()
 
         uav_p = x[0:3].flatten()
@@ -229,8 +229,8 @@ while True:
         
         viewer.sync()
 
-    np.save(os.path.join('../Data/uav_revise/traj_neural', 'traj_{}.npy'.format(traj_cnt)),np.array(traj))
+    # np.save(os.path.join('../Data/uav_revise/traj_neural', 'traj_{}.npy'.format(traj_cnt)),np.array(traj))
     traj_cnt+=1
-    input()
+    # input()
         # center_traj = controller.opt_traj
         # center_tensor = torch.tensor(center_traj,dtype=torch.float32, device="cuda")
